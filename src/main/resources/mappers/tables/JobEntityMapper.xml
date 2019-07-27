@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.clould.batch.dao.tables.JobEntityMapper">
+  <resultMap id="BaseResultMap" type="com.spring.clould.batch.model.tables.JobEntity">
+    <result column="ID" jdbcType="INTEGER" property="id" />
+    <result column="JOB_NAME" jdbcType="VARCHAR" property="jobName" />
+    <result column="JOB_GROUP" jdbcType="VARCHAR" property="jobGroup" />
+    <result column="CRON" jdbcType="VARCHAR" property="cron" />
+    <result column="JOB_PARAM" jdbcType="VARCHAR" property="jobParam" />
+    <result column="DESCRIPTION" jdbcType="VARCHAR" property="description" />
+    <result column="VM_PARAM" jdbcType="VARCHAR" property="vmParam" />
+    <result column="JAR_PATH" jdbcType="VARCHAR" property="jarPath" />
+    <result column="STATUS" jdbcType="VARCHAR" property="status" />
+  </resultMap>
+  <insert id="insert" parameterType="com.spring.clould.batch.model.tables.JobEntity">
+    <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Integer">
+      SELECT LAST_INSERT_ID()
+    </selectKey>
+    insert into JOB_ENTITY (JOB_NAME, JOB_GROUP, CRON, 
+      JOB_PARAM, DESCRIPTION, VM_PARAM, 
+      JAR_PATH, STATUS)
+    values (#{jobName,jdbcType=VARCHAR}, #{jobGroup,jdbcType=VARCHAR}, #{cron,jdbcType=VARCHAR}, 
+      #{jobParam,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{vmParam,jdbcType=VARCHAR}, 
+      #{jarPath,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR})
+  </insert>
+  <select id="selectAll" resultMap="BaseResultMap">
+    select ID, JOB_NAME, JOB_GROUP, CRON, JOB_PARAM, DESCRIPTION, VM_PARAM, JAR_PATH, 
+    STATUS
+    from JOB_ENTITY
+  </select>
+  <resultMap id="BaseResultMap" type="com.citiccard.risk.legal.model.tables.JobEntity">
+    <id column="ID" jdbcType="INTEGER" property="id" />
+    <result column="JOB_NAME" jdbcType="VARCHAR" property="jobName" />
+    <result column="JOB_GROUP" jdbcType="VARCHAR" property="jobGroup" />
+    <result column="CRON" jdbcType="VARCHAR" property="cron" />
+    <result column="JOB_PARAM" jdbcType="VARCHAR" property="jobParam" />
+    <result column="DESCRIPTION" jdbcType="VARCHAR" property="description" />
+    <result column="VM_PARAM" jdbcType="VARCHAR" property="vmParam" />
+    <result column="JAR_PATH" jdbcType="VARCHAR" property="jarPath" />
+    <result column="STATUS" jdbcType="VARCHAR" property="status" />
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from job_entity
+    where ID = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.citiccard.risk.legal.model.tables.JobEntity">
+    <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Integer">
+      SELECT LAST_INSERT_ID()
+    </selectKey>
+    insert into job_entity (JOB_NAME, JOB_GROUP, CRON, 
+      JOB_PARAM, DESCRIPTION, VM_PARAM, 
+      JAR_PATH, STATUS)
+    values (#{jobName,jdbcType=VARCHAR}, #{jobGroup,jdbcType=VARCHAR}, #{cron,jdbcType=VARCHAR}, 
+      #{jobParam,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{vmParam,jdbcType=VARCHAR}, 
+      #{jarPath,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR})
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.citiccard.risk.legal.model.tables.JobEntity">
+    update job_entity
+    set JOB_NAME = #{jobName,jdbcType=VARCHAR},
+      JOB_GROUP = #{jobGroup,jdbcType=VARCHAR},
+      CRON = #{cron,jdbcType=VARCHAR},
+      JOB_PARAM = #{jobParam,jdbcType=VARCHAR},
+      DESCRIPTION = #{description,jdbcType=VARCHAR},
+      VM_PARAM = #{vmParam,jdbcType=VARCHAR},
+      JAR_PATH = #{jarPath,jdbcType=VARCHAR},
+      STATUS = #{status,jdbcType=VARCHAR}
+    where ID = #{id,jdbcType=INTEGER}
+  </update>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select ID, JOB_NAME, JOB_GROUP, CRON, JOB_PARAM, DESCRIPTION, VM_PARAM, JAR_PATH, 
+    STATUS
+    from job_entity
+    where ID = #{id,jdbcType=INTEGER}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap">
+    select ID, JOB_NAME, JOB_GROUP, CRON, JOB_PARAM, DESCRIPTION, VM_PARAM, JAR_PATH, 
+    STATUS
+    from job_entity
+  </select>
+</mapper>

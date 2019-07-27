@@ -1,0 +1,29 @@
+quartz:
+  enabled: true
+  
+server:
+  port: 9090
+  
+spring:
+  messages:
+    basename: i18n/Messages,i18n/Pages
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource                                                            # 配置当前要使用的数据源的操作类型
+    driver-class-name: org.gjt.mm.mysql.Driver                                                              # 配置MySQL的驱动程序类
+    url: jdbc:mysql://192.168.171.10:3306/mybatch?useUnicode=true&characterEncoding=utf-8&useSSL=false      # 数据库连接地址
+    username: root                                                                                          # 数据库用户名
+    password: Zcw@201901                                                                                    # 数据库连接密码
+    filters: stat,wall,log4j                                                                                # 过滤器
+    dbcp2:                                                                                                  # 进行数据库连接池的配置
+      min-idle: 5                                                                                           # 数据库连接池的最小维持连接数    
+      initial-size: 5                                                                                       # 初始化提供的连接数
+      max-total: 5                                                                                          # 最大的连接数
+      max-wait-millis: 200                                                                                  # 等待连接获取的最大超时时间
+                                                                                       
+mybatis:
+  config-location: classpath:mybatis/mybatis.cfg.xml      # mybatis配置文件所在路径
+  type-aliases-package: com.citiccard.risk.legal.model    # 定义所有操作类的别名所在包
+  mapper-locations: classpath:mappers/**/*.xml            # 所有的mapper映射文件
+logging:
+    level:
+      com.citiccard.risk.legal.dao.table: DEBUG //包路径为mapper文件包路径
