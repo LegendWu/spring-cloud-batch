@@ -14,24 +14,21 @@ import com.alibaba.druid.support.http.WebStatFilter;
 
 @Configuration
 public class DruidConfig {
-	@SuppressWarnings("rawtypes")
 	@Bean
-	public ServletRegistrationBean druidServlet() { // 主要实现WEB监控的配置处理
-		@SuppressWarnings("unchecked")
-		ServletRegistrationBean servletRegistrationBean = new ServletRegistrationBean(new StatViewServlet(),
+	public ServletRegistrationBean<StatViewServlet> druidServlet() { // 主要实现WEB监控的配置处理
+		ServletRegistrationBean<StatViewServlet> servletRegistrationBean = new ServletRegistrationBean<StatViewServlet>(new StatViewServlet(),
 				"/druid/*"); // 现在要进行druid监控的配置处理操作
-		servletRegistrationBean.addInitParameter("allow", "127.0.0.1,192.168.1.159"); // 白名单
+		servletRegistrationBean.addInitParameter("allow", "127.0.0.1,192.168.137.1"); // 白名单
 		servletRegistrationBean.addInitParameter("deny", "192.168.1.200"); // 黑名单
-		servletRegistrationBean.addInitParameter("loginUsername", "zhangcuiwu"); // 用户名
+		servletRegistrationBean.addInitParameter("loginUsername", "admin"); // 用户名
 		servletRegistrationBean.addInitParameter("loginPassword", "123456"); // 密码
 		servletRegistrationBean.addInitParameter("resetEnable", "false"); // 是否可以重置数据源
 		return servletRegistrationBean;
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Bean
-	public FilterRegistrationBean filterRegistrationBean() {
-		FilterRegistrationBean filterRegistrationBean = new FilterRegistrationBean();
+	public FilterRegistrationBean<WebStatFilter> filterRegistrationBean() {
+		FilterRegistrationBean<WebStatFilter> filterRegistrationBean = new FilterRegistrationBean<WebStatFilter>();
 		filterRegistrationBean.setFilter(new WebStatFilter());
 		filterRegistrationBean.addUrlPatterns("/*"); // 所有请求进行监控处理
 		filterRegistrationBean.addInitParameter("exclusions", "*.js,*.gif,*.jpg,*.css,/druid/*");

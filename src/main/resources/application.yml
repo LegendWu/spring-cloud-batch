@@ -1,9 +1,7 @@
 quartz:
   enabled: true
-  
 server:
   port: 9090
-  
 spring:
   messages:
     basename: i18n/Messages,i18n/Pages
@@ -18,12 +16,11 @@ spring:
       min-idle: 5                                                                                           # 数据库连接池的最小维持连接数    
       initial-size: 5                                                                                       # 初始化提供的连接数
       max-total: 5                                                                                          # 最大的连接数
-      max-wait-millis: 200                                                                                  # 等待连接获取的最大超时时间
-                                                                                       
+      max-wait-millis: 200                                                                                  # 等待连接获取的最大超时时间                                                                                    
 mybatis:
   config-location: classpath:mybatis/mybatis.cfg.xml      # mybatis配置文件所在路径
-  type-aliases-package: com.citiccard.risk.legal.model    # 定义所有操作类的别名所在包
+  type-aliases-package: com.spring.clould.batch.model    # 定义所有操作类的别名所在包
   mapper-locations: classpath:mappers/**/*.xml            # 所有的mapper映射文件
 logging:
     level:
-      com.citiccard.risk.legal.dao.table: DEBUG //包路径为mapper文件包路径
+      com.spring.clould.batch.dao.table: DEBUG //包路径为mapper文件包路径

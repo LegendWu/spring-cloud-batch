@@ -24,7 +24,7 @@ public class DynamicJobService {
 	
     //通过Id获取Job
     public JobEntity getJobEntityById(Integer id) {
-        return mapper.selectAll().get(0);
+        return mapper.selectByPrimaryKey(id);
     }
     //从数据库中加载获取到所有Job
     public List<JobEntity> loadJobs() {
