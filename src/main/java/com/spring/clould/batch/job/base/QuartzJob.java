@@ -1,6 +1,6 @@
 package com.spring.clould.batch.job.base;
 
-import java.util.List;
+import java.util.Date;
 
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
@@ -9,14 +9,23 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.JobParametersInvalidException;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
+import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
+import org.springframework.batch.core.repository.JobRestartException;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.spring.clould.batch.entity.BhJob;
-import com.spring.clould.batch.entity.BhJobStep;
 import com.spring.clould.batch.mapper.BhJobMapper;
 import com.spring.clould.batch.mapper.BhJobStepMapper;
+import com.spring.clould.batch.util.BeanUtil;
+import com.spring.clould.batch.util.ConvertUtil;
 
 /**
  * :@DisallowConcurrentExecution : 此标记用在实现Job的类上面,意思是不允许并发执行.
@@ -34,12 +43,25 @@ public class QuartzJob implements Job {
     @Autowired
     BhJobStepMapper bhJobStepMapper;
     
+    @Autowired
+    JobLauncher jobLauncher;
+    
     @Override
     public void execute(JobExecutionContext executorContext) throws JobExecutionException {
-        JobDataMap map = executorContext.getMergedJobDataMap();
-        BhJob job = bhJobMapper.selectById(map.getLongValue("id"));
+        JobDataMap jobDataMap = executorContext.getMergedJobDataMap();
+        BhJob job = ConvertUtil.convertToBhJob(jobDataMap);
         logger.info("正在执行任务{}", job.getJobName());
-        List<BhJobStep> steps = bhJobStepMapper.selectList(new QueryWrapper<BhJobStep>().orderByAsc("step_name"));
-        logger.info("当前任务下可执行的步骤有{}", steps.size());
+//        List<BhJobStep> steps = bhJobStepMapper.selectList(new QueryWrapper<BhJobStep>().orderByAsc("step_name"));
+//        logger.info("当前任务下可执行的步骤有{}", steps.size());
+        JobParameters jobParameters = new JobParametersBuilder().addDate("date", new Date()).toJobParameters();
+        try {
+			JobExecution result = jobLauncher.run( (org.springframework.batch.core.Job) BeanUtil.getContext().getBean(job.getJobName()), jobParameters);
+			System.out.println(result.getStatus());
+        } catch (BeansException | JobExecutionAlreadyRunningException | JobRestartException
+				| JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
+			// TODO Auto-generated catch ablock
+			e.printStackTrace();
+		}
+        
     }
 }

@@ -1,7 +1,12 @@
 package com.spring.clould.batch.entity;
 
-public class BhJobStep {
-    private Integer id;
+import com.spring.clould.batch.entity.base.SuperEntity;
+
+/**
+ * 批量步骤表
+ */
+@SuppressWarnings("serial")
+public class BhJobStep extends SuperEntity<BhJobStep> {
 
     private String jobName;
 
@@ -12,14 +17,6 @@ public class BhJobStep {
     private String description;
 
     private String status;
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
 
     public String getJobName() {
         return jobName;

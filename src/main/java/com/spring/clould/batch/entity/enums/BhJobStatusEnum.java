@@ -9,10 +9,11 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum BhJobStatusEnum implements IEnum<String> {
 	RUNABLE("RUNABLE", "可执行的"),
-	RUNNING("RUNNING", "正在运行"),
+	RUNNING("RUNNING", "正在执行"),
+	WAITING("WAITING", "等待执行"),
 	COMPLETED("COMPLETED", "执行完成"),
-    STOPPED("STOPPED", "停止运行"),
-    FAILED("FAILED", "运行失败");
+	STOPPED("STOPPED", "停止执行"),
+    FAILED("FAILED", "执行失败");
 
     private String value;
     private String desc;

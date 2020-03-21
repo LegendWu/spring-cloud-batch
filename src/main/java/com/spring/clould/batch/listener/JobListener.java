@@ -1,9 +1,8 @@
 package com.spring.clould.batch.listener;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
-import javax.annotation.PostConstruct;
 
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobBuilder;
@@ -23,9 +22,10 @@ import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.spring.clould.batch.entity.BhJob;
-import com.spring.clould.batch.entity.enums.BhJobStatusEnum;
 import com.spring.clould.batch.job.base.QuartzJob;
 import com.spring.clould.batch.mapper.BhJobMapper;
+import com.spring.clould.batch.util.CompareUtil;
+import com.spring.clould.batch.util.ConvertUtil;
 
 @RestController
 public class JobListener {
@@ -39,28 +39,13 @@ public class JobListener {
 
 	public static List<BhJob> jobs;
 
-	// 初始化启动所有的Job
-	@PostConstruct
-	public void initialize() {
-		try {
-			reStartAllJobs();
-			logger.info("INIT SUCCESS");
-		} catch (SchedulerException e) {
-			logger.info("INIT EXCEPTION : " + e.getMessage());
-			e.printStackTrace();
-		}
-	}
-
 	/**
 	 * 任务更新时刷新任务
 	 * 
 	 * @throws SchedulerException
 	 */
-	@Scheduled(cron = "0/15 * * * * ?")
+	@Scheduled(fixedRate=30000)
 	public void jobRefresh() throws SchedulerException {
-//		List<BhJob> currentJobs = bhJobMapper.selectList(new QueryWrapper<BhJob>());
-		// 判断当前jobs和前一次的jobs是否有修改
-
 		reStartAllJobs();
 	}
 
@@ -69,21 +54,58 @@ public class JobListener {
 	 */
 	private void reStartAllJobs() throws SchedulerException {
 		Scheduler scheduler = factory.getScheduler();
-		Set<JobKey> set = scheduler.getJobKeys(GroupMatcher.anyGroup());
-		for (JobKey jobKey : set) {
-			scheduler.deleteJob(jobKey);
+		if(!scheduler.isStarted()) {
+			scheduler.start();
 		}
 		jobs = bhJobMapper.selectList(null);
+		List<String> allJobs = new ArrayList<String>();
 		for (BhJob job : jobs) {
-			JobDataMap map = new JobDataMap();
-			map.put("id", job.getId());
-			map.put("jobName", job.getJobName());
+			allJobs.add(job.getJobName());
 			JobKey jobKey = getJobKey(job);
-			JobDetail jobDetail = geJobDetail(jobKey, job.getDescription(), map);
-			if (job.getStatus() == BhJobStatusEnum.RUNABLE) {
-				scheduler.scheduleJob(jobDetail, getTrigger(job));
-			} else {
-				logger.info("当前批量[{}]状态为[{}]，本次跳过", job.getJobName(), job.getStatus());
+			switch (job.getStatus()) {
+			case RUNABLE:
+			case COMPLETED:
+				JobDataMap newMap = ConvertUtil.convertToJobDataMap(job);
+				JobDetail jobDetail = geJobDetail(jobKey, job.getDescription(), newMap);
+				if (scheduler.checkExists(jobKey)) {
+					JobDataMap lastMap = scheduler.getJobDetail(jobKey).getJobDataMap();
+					List<String> excludeFields = new ArrayList<String>();
+					excludeFields.add("status");
+					// 如果任务更新，则刷新调度任务
+					if (CompareUtil.isMapDifferent(newMap, lastMap, excludeFields)) {
+						scheduler.deleteJob(jobKey);
+						scheduler.scheduleJob(jobDetail, getTrigger(job));
+						logger.info("批量[{}]状态为[{}]，刷新调度任务...", job.getJobName(), job.getStatus());
+					}
+				} else {
+					scheduler.scheduleJob(jobDetail, getTrigger(job));
+					logger.info("批量[{}]状态为[{}]，新增调度任务...", job.getJobName(), job.getStatus());
+				}
+				break;
+			case RUNNING:
+				break;
+			case WAITING:
+				scheduler.deleteJob(jobKey);
+				logger.info("批量[{}]状态为[{}]，任务正在等待执行，需修改状态为RUNABLE才可执行", job.getJobName(), job.getStatus());
+				break;
+			case STOPPED:
+			case FAILED:
+				if (scheduler.checkExists(jobKey)) {
+					scheduler.deleteJob(jobKey);
+					logger.info("批量[{}]状态为[{}]，删除调度任务...", job.getJobName(), job.getStatus());
+				}
+				break;
+			default:
+				scheduler.deleteJob(jobKey);
+				logger.info("批量[{}]状态为[{}]，删除调度任务...", job.getJobName(), job.getStatus());
+				break;
+			}
+		}
+		// 将不存在于任务表的定时任务删除
+		Set<JobKey> set = scheduler.getJobKeys(GroupMatcher.anyGroup());
+		for (JobKey jobKey : set) {
+			if (!allJobs.contains(jobKey.getName())) {
+				scheduler.deleteJob(jobKey);
 			}
 		}
 	}

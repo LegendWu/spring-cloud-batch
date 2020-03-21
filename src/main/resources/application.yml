@@ -3,6 +3,9 @@ quartz:
 server:
   port: 9090
 spring:
+  batch:
+    job:
+      enabled: false
   messages:
     basename: i18n/Messages,i18n/Pages
   datasource:
