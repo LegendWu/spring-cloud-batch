@@ -1,21 +1,15 @@
-package com.spring.clould.batch.model.tables;
+package com.spring.clould.batch.entity;
 
-public class JobEntity {
+public class BhJobStep {
     private Integer id;
 
     private String jobName;
 
     private String jobGroup;
 
-    private String cron;
-
-    private String jobParam;
+    private String stepName;
 
     private String description;
-
-    private String vmParam;
-
-    private String jarPath;
 
     private String status;
 
@@ -43,20 +37,12 @@ public class JobEntity {
         this.jobGroup = jobGroup == null ? null : jobGroup.trim();
     }
 
-    public String getCron() {
-        return cron;
+    public String getStepName() {
+        return stepName;
     }
 
-    public void setCron(String cron) {
-        this.cron = cron == null ? null : cron.trim();
-    }
-
-    public String getJobParam() {
-        return jobParam;
-    }
-
-    public void setJobParam(String jobParam) {
-        this.jobParam = jobParam == null ? null : jobParam.trim();
+    public void setStepName(String stepName) {
+        this.stepName = stepName == null ? null : stepName.trim();
     }
 
     public String getDescription() {
@@ -65,22 +51,6 @@ public class JobEntity {
 
     public void setDescription(String description) {
         this.description = description == null ? null : description.trim();
-    }
-
-    public String getVmParam() {
-        return vmParam;
-    }
-
-    public void setVmParam(String vmParam) {
-        this.vmParam = vmParam == null ? null : vmParam.trim();
-    }
-
-    public String getJarPath() {
-        return jarPath;
-    }
-
-    public void setJarPath(String jarPath) {
-        this.jarPath = jarPath == null ? null : jarPath.trim();
     }
 
     public String getStatus() {
