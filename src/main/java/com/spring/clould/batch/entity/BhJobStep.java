@@ -1,12 +1,12 @@
 package com.spring.clould.batch.entity;
 
-import com.spring.clould.batch.entity.base.SuperEntity;
+import com.baomidou.mybatisplus.extension.activerecord.Model;
 
 /**
  * 批量步骤表
  */
 @SuppressWarnings("serial")
-public class BhJobStep extends SuperEntity<BhJobStep> {
+public class BhJobStep extends Model<BhJobStep>{
 
     private String jobName;
 

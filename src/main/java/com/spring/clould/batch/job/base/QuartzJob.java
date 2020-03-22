@@ -26,6 +26,8 @@ import com.spring.clould.batch.mapper.BhJobMapper;
 import com.spring.clould.batch.mapper.BhJobStepMapper;
 import com.spring.clould.batch.util.BeanUtil;
 import com.spring.clould.batch.util.ConvertUtil;
+import com.spring.clould.batch.util.IPUtil;
+import com.spring.clould.batch.util.RedisLockUtil;
 
 /**
  * :@DisallowConcurrentExecution : 此标记用在实现Job的类上面,意思是不允许并发执行.
@@ -35,33 +37,43 @@ import com.spring.clould.batch.util.ConvertUtil;
 @DisallowConcurrentExecution
 @Component
 public class QuartzJob implements Job {
-    private Logger logger = LoggerFactory.getLogger(QuartzJob.class);
-    
-    @Autowired
-    BhJobMapper bhJobMapper;
-    
-    @Autowired
-    BhJobStepMapper bhJobStepMapper;
-    
-    @Autowired
-    JobLauncher jobLauncher;
-    
-    @Override
-    public void execute(JobExecutionContext executorContext) throws JobExecutionException {
-        JobDataMap jobDataMap = executorContext.getMergedJobDataMap();
-        BhJob job = ConvertUtil.convertToBhJob(jobDataMap);
-        logger.info("正在执行任务{}", job.getJobName());
-//        List<BhJobStep> steps = bhJobStepMapper.selectList(new QueryWrapper<BhJobStep>().orderByAsc("step_name"));
-//        logger.info("当前任务下可执行的步骤有{}", steps.size());
-        JobParameters jobParameters = new JobParametersBuilder().addDate("date", new Date()).toJobParameters();
-        try {
-			JobExecution result = jobLauncher.run( (org.springframework.batch.core.Job) BeanUtil.getContext().getBean(job.getJobName()), jobParameters);
-			System.out.println(result.getStatus());
-        } catch (BeansException | JobExecutionAlreadyRunningException | JobRestartException
-				| JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
-			// TODO Auto-generated catch ablock
-			e.printStackTrace();
+	private Logger logger = LoggerFactory.getLogger(QuartzJob.class);
+
+	@Autowired
+	BhJobMapper bhJobMapper;
+
+	@Autowired
+	BhJobStepMapper bhJobStepMapper;
+
+	@Autowired
+	JobLauncher jobLauncher;
+
+	@Autowired
+	RedisLockUtil redisLockUtil;
+
+	@Override
+	public void execute(JobExecutionContext executorContext) throws JobExecutionException {
+		JobDataMap jobDataMap = executorContext.getMergedJobDataMap();
+		BhJob job = ConvertUtil.convertToBhJob(jobDataMap);
+		// 获取分布式锁
+		boolean isLock = redisLockUtil.lock(job.getJobName());
+		if (isLock) {
+			logger.info("当前机器[{}]获取到分布式锁，开始执行调度任务[{}]", IPUtil.getLocalIP(), job.getJobName());
+			JobParameters jobParameters = new JobParametersBuilder().addDate("date", new Date()).toJobParameters();
+			try {
+				JobExecution result = jobLauncher.run(
+						(org.springframework.batch.core.Job) BeanUtil.getContext().getBean(job.getJobName()),
+						jobParameters);
+				System.out.println(result.getStatus());
+			} catch (BeansException | JobExecutionAlreadyRunningException | JobRestartException
+					| JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
+				logger.error("批量执行异常", e);
+			} finally {
+				logger.info("删除分布式锁", job.getJobName());
+				redisLockUtil.delete(job.getJobName());
+			}
+		} else {
+			logger.warn("当前机器[{}]未获取到分布式锁，本次任务[{}]跳过执行！", IPUtil.getLocalIP(), job.getJobName());
 		}
-        
-    }
+	}
 }

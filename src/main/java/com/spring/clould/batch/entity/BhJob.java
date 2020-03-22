@@ -1,13 +1,14 @@
 package com.spring.clould.batch.entity;
 
-import com.spring.clould.batch.entity.base.SuperEntity;
+import com.baomidou.mybatisplus.extension.activerecord.Model;
 import com.spring.clould.batch.entity.enums.BhJobStatusEnum;
 
 /**
  *批量任务表
+ * @param <T>
  */
 @SuppressWarnings("serial")
-public class BhJob extends SuperEntity<BhJob> {
+public class BhJob extends Model<BhJob> {
 
 	private String jobName;
 
@@ -21,7 +22,7 @@ public class BhJob extends SuperEntity<BhJob> {
 
     private BhJobStatusEnum status;
 
-    public String getJobName() {
+	public String getJobName() {
         return jobName;
     }
 
