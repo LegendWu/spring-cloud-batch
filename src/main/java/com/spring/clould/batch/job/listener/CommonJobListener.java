@@ -7,9 +7,9 @@ import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TestListener implements JobExecutionListener{
+public class CommonJobListener implements JobExecutionListener{
 	
-	private static Logger logger = LoggerFactory.getLogger(TestListener.class);
+	private static Logger logger = LoggerFactory.getLogger(CommonJobListener.class);
 	
 	@Override
 	public void beforeJob(JobExecution jobExecution) {

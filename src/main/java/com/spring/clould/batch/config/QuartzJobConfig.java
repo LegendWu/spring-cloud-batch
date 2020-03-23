@@ -1,4 +1,4 @@
-package com.spring.clould.batch.job.base;
+package com.spring.clould.batch.config;
 
 import java.util.Date;
 
@@ -36,8 +36,8 @@ import com.spring.clould.batch.util.RedisLockUtil;
  */
 @DisallowConcurrentExecution
 @Component
-public class QuartzJob implements Job {
-	private Logger logger = LoggerFactory.getLogger(QuartzJob.class);
+public class QuartzJobConfig implements Job {
+	private Logger logger = LoggerFactory.getLogger(QuartzJobConfig.class);
 
 	@Autowired
 	BhJobMapper bhJobMapper;
@@ -60,16 +60,17 @@ public class QuartzJob implements Job {
 		if (isLock) {
 			logger.info("当前机器[{}]获取到分布式锁，开始执行调度任务[{}]", IPUtil.getLocalIP(), job.getJobName());
 			JobParameters jobParameters = new JobParametersBuilder().addDate("date", new Date()).toJobParameters();
+//			JobParameters jobParameters = new JobParametersBuilder().addString("20200323", "yyyyMMdd").toJobParameters();
 			try {
 				JobExecution result = jobLauncher.run(
 						(org.springframework.batch.core.Job) BeanUtil.getContext().getBean(job.getJobName()),
 						jobParameters);
-				System.out.println(result.getStatus());
+				logger.info("任务[{}]状态[{}]", job.getJobName(), result.getStatus());
 			} catch (BeansException | JobExecutionAlreadyRunningException | JobRestartException
 					| JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
 				logger.error("批量执行异常", e);
 			} finally {
-				logger.info("删除分布式锁", job.getJobName());
+				logger.info("删除任务[{}]分布式锁", job.getJobName());
 				redisLockUtil.delete(job.getJobName());
 			}
 		} else {

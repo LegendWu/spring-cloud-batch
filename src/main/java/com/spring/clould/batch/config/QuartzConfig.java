@@ -27,7 +27,6 @@ import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.scheduling.quartz.SpringBeanJobFactory;
 
 import com.spring.clould.batch.entity.BhJob;
-import com.spring.clould.batch.job.base.QuartzJob;
 import com.spring.clould.batch.mapper.BhJobMapper;
 import com.spring.clould.batch.util.CompareUtil;
 import com.spring.clould.batch.util.ConvertUtil;
@@ -178,7 +177,7 @@ public class QuartzConfig {
 	 * @return
 	 */
 	public JobDetail geJobDetail(JobKey jobKey, String description, JobDataMap map) {
-		return JobBuilder.newJob(QuartzJob.class).withIdentity(jobKey).withDescription(description).setJobData(map)
+		return JobBuilder.newJob(QuartzJobConfig.class).withIdentity(jobKey).withDescription(description).setJobData(map)
 				.storeDurably().build();
 	}
 

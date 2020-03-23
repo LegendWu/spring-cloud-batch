@@ -3,7 +3,9 @@ package com.spring.clould.batch.entity;
 import com.baomidou.mybatisplus.extension.activerecord.Model;
 
 @SuppressWarnings("serial")
-public class Cat extends Model<BhJob> {
+public class Cat extends Model<Cat> {
+	
+	private int id;
 
     private String catname;
 
@@ -11,7 +13,15 @@ public class Cat extends Model<BhJob> {
 
     private String cataddress;
 
-    public String getCatname() {
+    public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public String getCatname() {
         return catname;
     }
 

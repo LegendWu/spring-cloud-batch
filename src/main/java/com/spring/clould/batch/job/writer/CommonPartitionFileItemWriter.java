@@ -14,7 +14,8 @@ public class CommonPartitionFileItemWriter<T> extends FlatFileItemWriter<T> {
 
     private FileSystemResource fileSystemResource;
 
-    public void init(Class clz) {
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+	public void init(Class clz) {
         BeanWrapperFieldExtractor beanWrapperFieldExtractor = new BeanWrapperFieldExtractor();
         Field[] fields = clz.getDeclaredFields();
         List<String> list = new ArrayList<>();
@@ -34,10 +35,11 @@ public class CommonPartitionFileItemWriter<T> extends FlatFileItemWriter<T> {
         setEncoding("UTF-8");
     }
 
-    public CommonPartitionFileItemWriter(Class clz,String fromId,String toId) {
+    @SuppressWarnings("rawtypes")
+	public CommonPartitionFileItemWriter(Class clz,String startId, String endId) {
         init(clz);
-        fileSystemResource = new FileSystemResource("D:\\aplus\\shuqian\\source\\"+ clz.getSimpleName()+"-"+fromId + "-" + toId  + ".csv");
+        System.out.println("写文件，startId="+startId+", endId="+endId);
+        fileSystemResource = new FileSystemResource("D:\\test\\source\\"+ clz.getSimpleName()+"-"+startId + "-" + endId  + ".csv");
         setResource(fileSystemResource);
-
     }
 }

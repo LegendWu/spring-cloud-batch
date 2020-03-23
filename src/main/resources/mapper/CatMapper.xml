@@ -2,8 +2,12 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.spring.clould.batch.mapper.CatMapper">
 
-	<select id="selectPartitionList" parameterType="Map" resultType="com.spring.clould.batch.entity.Cat">
-		SELECT * FROM CAT LIMIT ${fromId},${toId}
+	<select id="loadKeys" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+		SELECT ID FROM CAT
+	</select>
+	
+	<select id="selectByIdRange" parameterType="java.util.HashMap" resultType="com.spring.clould.batch.entity.Cat">
+		SELECT * FROM CAT WHERE ID &gt;= #{startId} AND ID &lt;= #{endId}
 	</select>
 
 </mapper>

@@ -16,14 +16,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 
 import com.spring.clould.batch.entity.Cat;
-import com.spring.clould.batch.job.partitioner.CommonPartitioner;
-import com.spring.clould.batch.job.processor.CatPartitionProcessor;
-import com.spring.clould.batch.job.reader.CommonPartitionMybatisItemReader;
+import com.spring.clould.batch.job.partitioner.KeyRangePartitioner;
+import com.spring.clould.batch.job.processor.CatProcessor;
+import com.spring.clould.batch.job.reader.CommonRangeKeyReader;
 import com.spring.clould.batch.job.writer.CommonPartitionFileItemWriter;
 
 @Configuration
 @EnableBatchProcessing
-public class CatMasterPartitionerJob {
+public class CatLocalPartitionerJob {
+	
+	private static final int GRID_SIZE = 3;
 
     @Autowired
     private JobBuilderFactory jobBuilderFactory;
@@ -32,33 +34,32 @@ public class CatMasterPartitionerJob {
     private StepBuilderFactory stepBuilderFactory;
 
     @Autowired
-    private CommonPartitioner catPartitioner;
-
-    @Autowired
     private SqlSessionFactory sqlSessionFactory;
 
     @Autowired
-    private CatPartitionProcessor catPartitionProcessor;
+	@StepScope
+	CatProcessor catProcessor;
 
-    @Bean("test_job_1")
-    public Job catPartitionerJob() {
-         return jobBuilderFactory.get("test_job_1")
+    @Bean("catLocalReaderProcessorWriterJob")
+    public Job job() {
+         return jobBuilderFactory.get("catLocalReaderProcessorWriterJob")
                  .start(catMasterStep())
                  .build();
     }
 
     @Bean
     public Step catMasterStep() {
+    	String queryId = "com.spring.clould.batch.mapper.CatMapper.loadKeys";
         return stepBuilderFactory
         		.get("catMasterStep")
-        		.partitioner(catSlaveStep().getName(), catPartitioner)
+        		.partitioner(catSlaveStep().getName(), new KeyRangePartitioner<Integer>(sqlSessionFactory, queryId, null))
                 .partitionHandler(catPartitionHandler()).build();
     }
 
     @Bean
     public PartitionHandler catPartitionHandler() {
         TaskExecutorPartitionHandler handler = new TaskExecutorPartitionHandler();
-        handler.setGridSize(2);
+        handler.setGridSize(GRID_SIZE);
         handler.setTaskExecutor(catPartitionHandlerTaskExecutor());
         handler.setStep(catSlaveStep());
         try {
@@ -78,25 +79,25 @@ public class CatMasterPartitionerJob {
     public Step catSlaveStep() {
         return stepBuilderFactory.get("catSlaveStep")
                 .<Cat, Cat>chunk(10)
-                .reader(commonPartitionMybatisItemReader(null, null))
-                .processor(catPartitionProcessor)
+                .reader(catLocalRangeKeyReader(null, null))
+                .processor(catProcessor)
                 .writer(commonPartitionFileItemWriter(null, null))
                 .build();
     }
 
     @Bean
-    @StepScope
-    public CommonPartitionMybatisItemReader<Cat> commonPartitionMybatisItemReader( 
-    		@Value("#{stepExecutionContext[fromId]}") final String fromId,
-            @Value("#{stepExecutionContext[toId]}") final String toId) {
-        return new CommonPartitionMybatisItemReader<Cat>(sqlSessionFactory, Cat.class.getSimpleName(), fromId, toId);
-    }
+	@StepScope
+	public CommonRangeKeyReader<Cat> catLocalRangeKeyReader(@Value("#{stepExecutionContext[startId]}") final Integer fromId,
+			@Value("#{stepExecutionContext[endId]}") final Integer toId) {
+		String queryId = "com.spring.clould.batch.mapper.CatMapper.selectByIdRange";
+		return new CommonRangeKeyReader<Cat>(sqlSessionFactory, queryId, fromId, toId);
+	}
 
     @Bean
     @StepScope
     public CommonPartitionFileItemWriter<Cat> commonPartitionFileItemWriter(
-    		@Value("#{stepExecutionContext[fromId]}") final String fromId,
-            @Value("#{stepExecutionContext[toId]}") final String toId) {
-         return new CommonPartitionFileItemWriter<Cat>(Cat.class, fromId, toId);
+    		@Value("#{stepExecutionContext[startId]}") final String startId,
+            @Value("#{stepExecutionContext[endId]}") final String endId) {
+         return new CommonPartitionFileItemWriter<Cat>(Cat.class, startId, endId);
     }
 }
