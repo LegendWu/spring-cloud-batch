@@ -10,6 +10,13 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import com.spring.clould.batch.util.BeanUtil;
 
+/**
+ * Description: 启动类
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 @EnableScheduling //启动任务调度
 @EnableJms //启动消息队列
 @EnableTransactionManagement //启动事务管理器

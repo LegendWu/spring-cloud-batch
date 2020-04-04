@@ -5,6 +5,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Description: list拆分工具类
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 public class SeparateUtil {
 	
 	/**

@@ -12,6 +12,13 @@ import com.spring.clould.batch.job.partitioner.KeyStorePartitioner;
 import com.spring.clould.batch.job.step.base.BaseRemoteStep;
 import com.spring.clould.batch.job.tasklet.TestEntityStoreTasklet;
 
+/**
+ * Description: 测试远程实体拆分类
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 @Configuration
 public class TestEntityStoreStep extends BaseRemoteStep{
 

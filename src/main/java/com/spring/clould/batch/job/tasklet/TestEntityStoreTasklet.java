@@ -14,6 +14,13 @@ import com.alibaba.fastjson.JSONArray;
 import com.spring.clould.batch.entity.Cat;
 import com.spring.clould.batch.mapper.CatMapper;
 
+/**
+ * Description: 测试类
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 public class TestEntityStoreTasklet implements Tasklet {
 	
 	private Logger logger = LoggerFactory.getLogger(TestEntityStoreTasklet.class);

@@ -7,8 +7,11 @@ import com.spring.clould.batch.entity.enums.BhJobStatusEnum;
 import com.spring.clould.batch.entity.enums.YesOrNoEnum;
 
 /**
- *批量任务表
- * @param <T>
+ * Description: 批量任务类
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
  */
 @SuppressWarnings("serial")
 public class BhJob extends Model<BhJob> {

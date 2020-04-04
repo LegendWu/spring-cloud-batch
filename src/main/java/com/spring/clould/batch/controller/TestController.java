@@ -8,6 +8,13 @@ import com.spring.clould.batch.entity.Cat;
 import com.spring.clould.batch.mapper.CatMapper;
 import com.spring.clould.batch.util.RedisLockUtil;
 
+/**
+ * Description: 测试controller
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 @RestController
 public class TestController {
 
@@ -19,7 +26,7 @@ public class TestController {
 
 //	@PostConstruct
 	public void initCat() {
-		for (int i = 0; i < 1000050; i++) {
+		for (int i = 0; i < 100050; i++) {
 			Cat cat = new Cat();
 			cat.setCatname("cat" + i);
 			cat.setCatage(i + "");

@@ -6,6 +6,13 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
 
+/**
+ * Description: IP工具类
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 public class IPUtil {
 	/**
      * 获取本地IP地址

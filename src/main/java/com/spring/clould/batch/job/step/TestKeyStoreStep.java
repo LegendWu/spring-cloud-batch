@@ -11,6 +11,13 @@ import com.spring.clould.batch.job.partitioner.KeyStorePartitioner;
 import com.spring.clould.batch.job.step.base.BaseRemoteStep;
 import com.spring.clould.batch.job.tasklet.TestKeyStoreTasklet;
 
+/**
+ * Description: 测试远程key存储类
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 @Configuration
 public class TestKeyStoreStep extends BaseRemoteStep{
 

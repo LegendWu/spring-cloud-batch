@@ -11,6 +11,13 @@ import org.springframework.context.annotation.Configuration;
 
 import com.spring.clould.batch.job.listener.CommonJobListener;
 
+/**
+ * Description: 远程分片任务配置
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 @Configuration
 @EnableBatchProcessing
 @EnableBatchIntegration

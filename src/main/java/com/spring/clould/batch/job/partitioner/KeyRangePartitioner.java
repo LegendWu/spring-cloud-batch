@@ -14,6 +14,13 @@ import org.springframework.batch.item.ExecutionContext;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.spring.clould.batch.util.SeparateUtil;
 
+/**
+ * Description: key区间分片
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 public class KeyRangePartitioner<T> extends SimplePartitioner {
 
 	private Logger logger = LoggerFactory.getLogger(KeyRangePartitioner.class);

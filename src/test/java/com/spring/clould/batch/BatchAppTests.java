@@ -8,6 +8,13 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.spring.clould.batch.util.RedisLockUtil;
 
+/**
+ * Description: 测试启动类
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class BatchAppTests {

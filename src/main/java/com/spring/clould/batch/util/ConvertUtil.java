@@ -9,6 +9,13 @@ import org.slf4j.LoggerFactory;
 
 import com.spring.clould.batch.entity.BhJob;
 
+/**
+ * Description: map与类转换
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 public class ConvertUtil {
 
 	private static Logger logger = LoggerFactory.getLogger(ConvertUtil.class);

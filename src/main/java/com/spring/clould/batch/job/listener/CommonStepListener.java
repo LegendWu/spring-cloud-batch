@@ -7,6 +7,13 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.stereotype.Component;
 
+/**
+ * Description: step监听器
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 @Component
 public class CommonStepListener implements StepExecutionListener{
 	

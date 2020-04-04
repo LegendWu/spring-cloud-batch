@@ -39,6 +39,13 @@ import com.spring.clould.batch.mapper.BhJobMapper;
 import com.spring.clould.batch.util.ConvertUtil;
 import com.spring.clould.batch.util.RedisLockUtil;
 
+/**
+ * Description: 定时任务配置
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 @Configuration
 public class QuartzConfig {
 	

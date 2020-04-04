@@ -15,6 +15,13 @@ import com.alibaba.fastjson.JSONArray;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.spring.clould.batch.util.SeparateUtil;
 
+/**
+ * Description: key存储分片（key可以是各个类型）
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
+ */
 public class KeyStorePartitioner<T> extends SimplePartitioner {
 
 	private Logger logger = LoggerFactory.getLogger(KeyStorePartitioner.class);

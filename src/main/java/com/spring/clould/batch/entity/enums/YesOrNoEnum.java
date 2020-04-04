@@ -4,7 +4,11 @@ import com.baomidou.mybatisplus.core.enums.IEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- *批量任务状态枚举
+ * Description: 是否枚举
+ * Copyright: Copyright (c) 2020
+ * @author zhangcuiwu  
+ * @date 2020年4月4日  
+ * @version 1.0
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum YesOrNoEnum implements IEnum<String> {
