@@ -13,7 +13,7 @@ import org.springframework.integration.jms.dsl.Jms;
 
 public class BaseRemoteStep {
 
-	protected static final int GRID_SIZE = 1000;
+	protected static final int DEFAULT_GRID_SIZE = 1000;
 
 	@Autowired
 	protected SqlSessionFactory sqlSessionFactory;
@@ -24,17 +24,17 @@ public class BaseRemoteStep {
 	@Autowired
 	protected RemotePartitioningWorkerStepBuilderFactory workerStepBuilderFactory;
 
-	@Bean("masterRequests")
+	@Bean
 	public DirectChannel masterRequests() {
 		return new DirectChannel();
 	}
 
-	@Bean("workerRequests")
+	@Bean
 	public DirectChannel workerRequests() {
 		return new DirectChannel();
 	}
 	
-	@Bean("outboundFlow")
+	@Bean
 	public IntegrationFlow outboundFlow(ActiveMQConnectionFactory connectionFactory) {
 		return IntegrationFlows.from(masterRequests())
 				.handle(Jms.outboundAdapter(connectionFactory).destination("masterRequests")).get();

@@ -19,7 +19,7 @@ public class TestKeyStoreStep extends BaseRemoteStep{
 		return this.managerStepBuilderFactory
 				.get("testKeyStoreMasterStep")
 				.partitioner("testKeyStoreWorkerStep", new KeyStorePartitioner<Integer>(sqlSessionFactory, "com.spring.clould.batch.mapper.CatMapper.loadKeys", null))
-				.gridSize(GRID_SIZE)
+				.gridSize(DEFAULT_GRID_SIZE)
 				.outputChannel(masterRequests())
 				.build();
 	}
