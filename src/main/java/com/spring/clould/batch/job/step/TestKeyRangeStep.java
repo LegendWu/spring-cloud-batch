@@ -21,6 +21,7 @@ public class TestKeyRangeStep extends BaseRemoteStep{
 				.partitioner("testKeyRangeWorkerStep", new KeyRangePartitioner<Integer>(sqlSessionFactory, "com.spring.clould.batch.mapper.CatMapper.loadKeys", null))
 				.gridSize(DEFAULT_GRID_SIZE)
 				.outputChannel(masterRequests())
+				.listener(stepListener)
 				.build();
 	}
 

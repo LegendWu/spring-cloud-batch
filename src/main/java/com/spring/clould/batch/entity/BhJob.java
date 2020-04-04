@@ -1,7 +1,10 @@
 package com.spring.clould.batch.entity;
 
+import org.springframework.batch.core.BatchStatus;
+
 import com.baomidou.mybatisplus.extension.activerecord.Model;
 import com.spring.clould.batch.entity.enums.BhJobStatusEnum;
+import com.spring.clould.batch.entity.enums.YesOrNoEnum;
 
 /**
  *批量任务表
@@ -23,6 +26,8 @@ public class BhJob extends Model<BhJob> {
     private String description;
 
     private BhJobStatusEnum status;
+    
+    private YesOrNoEnum isMultiRun;
     
 	public int getId() {
 		return id;
@@ -79,4 +84,45 @@ public class BhJob extends Model<BhJob> {
     public void setStatus(BhJobStatusEnum status) {
         this.status = status;
     }
+
+	public YesOrNoEnum getIsMultiRun() {
+		return isMultiRun;
+	}
+
+	public void setIsMultiRun(YesOrNoEnum isMultiRun) {
+		this.isMultiRun = isMultiRun;
+	}
+	
+	public void convertStatus(BatchStatus status) {
+		switch (status) {
+		case COMPLETED:
+			setStatus(BhJobStatusEnum.COMPLETED);
+			break;
+		case STARTING:
+			setStatus(BhJobStatusEnum.STARTING);
+			break;
+		case STARTED:
+			setStatus(BhJobStatusEnum.STARTED);
+			break;
+		case STOPPING:
+			setStatus(BhJobStatusEnum.STOPPING);
+			break;
+		case STOPPED:
+			setStatus(BhJobStatusEnum.STOPPED);
+			break;
+		case FAILED:
+			setStatus(BhJobStatusEnum.FAILED);
+			break;
+		case ABANDONED:
+			setStatus(BhJobStatusEnum.ABANDONED);
+			break;
+		case UNKNOWN:
+			setStatus(BhJobStatusEnum.UNKNOWN);
+			break;
+		default:
+			setStatus(BhJobStatusEnum.UNKNOWN);
+			break;
+		}
+	}
+    
 }

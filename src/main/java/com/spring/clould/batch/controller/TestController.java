@@ -33,7 +33,7 @@ public class TestController {
 
 	@GetMapping("deleteLock")
 	public void deleteRedisLock() {
-		redisLockUtil.delete("testJob");
+		redisLockUtil.deleleJobLock("testJob");
 	}
 
 }

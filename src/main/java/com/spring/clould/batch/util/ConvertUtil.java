@@ -52,7 +52,7 @@ public class ConvertUtil {
 			}
 			field.setAccessible(true);
 			try {
-				if(!field.getName().equals("status")) {
+				if(!field.getName().equals("status") && !field.getName().equals("isMultiRun")) {
 					field.set(job, map.get(field.getName()));
 				}
 			} catch (IllegalArgumentException | IllegalAccessException e) {

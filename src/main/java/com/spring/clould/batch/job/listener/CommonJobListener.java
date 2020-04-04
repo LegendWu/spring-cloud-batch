@@ -13,12 +13,13 @@ public class CommonJobListener implements JobExecutionListener{
 	
 	@Override
 	public void beforeJob(JobExecution jobExecution) {
-		logger.info("任务[{}]开始执行", jobExecution.getJobInstance().getJobName());
+		logger.info("=========任务 [ {} ] 开始执行=================", jobExecution.getJobInstance().getJobName());
 	}
 
 	@Override
 	public void afterJob(JobExecution jobExecution) {
-		logger.info("任务[{}]结束执行", jobExecution.getJobInstance().getJobName());
+		long start = jobExecution.getStartTime().getTime();
+		logger.info("=========任务 [ {} ] 结束执行================= ### 耗时：{} ms", jobExecution.getJobInstance().getJobName(), System.currentTimeMillis()-start);
 	}
 
 }

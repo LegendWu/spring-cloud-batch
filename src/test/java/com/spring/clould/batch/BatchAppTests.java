@@ -17,7 +17,7 @@ public class BatchAppTests {
 	
 	@Test
 	public void deleteRedisLock() {
-		redisLockUtil.delete("testJob");
+		redisLockUtil.deleleJobLock("testJob");
 	}
 
 }

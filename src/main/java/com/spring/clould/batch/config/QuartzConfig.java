@@ -1,5 +1,13 @@
 package com.spring.clould.batch.config;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+
+import javax.sql.DataSource;
+
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -28,16 +36,8 @@ import org.springframework.scheduling.quartz.SpringBeanJobFactory;
 
 import com.spring.clould.batch.entity.BhJob;
 import com.spring.clould.batch.mapper.BhJobMapper;
-import com.spring.clould.batch.util.CompareUtil;
 import com.spring.clould.batch.util.ConvertUtil;
 import com.spring.clould.batch.util.RedisLockUtil;
-
-import javax.sql.DataSource;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
 
 @Configuration
 public class QuartzConfig {
@@ -108,13 +108,17 @@ public class QuartzConfig {
 	 */
 	@Scheduled(fixedRate=10000)
 	public void jobRefresh() throws SchedulerException {
-		reStartAllJobs();
+		boolean isLock = redisLockUtil.lockJobRefresh();
+		if(isLock) {
+			refreshAllJobs();
+			redisLockUtil.deleleJobRefreshLock();
+		}
 	}
 
 	/**
 	 * 重新启动所有的job
 	 */
-	private void reStartAllJobs() throws SchedulerException {
+	private void refreshAllJobs() throws SchedulerException {
 		Scheduler scheduler = factory.getScheduler();
 		if(!scheduler.isStarted()) {
 			scheduler.start();
@@ -124,43 +128,40 @@ public class QuartzConfig {
 		for (BhJob job : jobs) {
 			allJobs.add(job.getJobName());
 			JobKey jobKey = getJobKey(job);
+			JobDataMap newMap = ConvertUtil.convertToJobDataMap(job);
+			JobDetail jobDetail = geJobDetail(jobKey, job.getDescription(), newMap);
 			switch (job.getStatus()) {
-			case RUNABLE:
+			case STARTED:
 			case COMPLETED:
-				JobDataMap newMap = ConvertUtil.convertToJobDataMap(job);
-				JobDetail jobDetail = geJobDetail(jobKey, job.getDescription(), newMap);
 				if (scheduler.checkExists(jobKey)) {
 					JobDataMap lastMap = scheduler.getJobDetail(jobKey).getJobDataMap();
-					List<String> excludeFields = new ArrayList<String>();
-					excludeFields.add("status");
-					// 如果任务更新，并且redis锁不存在，则刷新调度任务
-					if (CompareUtil.isMapDifferent(newMap, lastMap, excludeFields)
-							&& !redisLockUtil.hasKey(job.getJobName())) {
+					// 如果任务更新，则刷新调度任务
+					if (!newMap.get("cron").equals(lastMap.get("cron"))) {
 						scheduler.deleteJob(jobKey);
 						scheduler.scheduleJob(jobDetail, getTrigger(job));
-						logger.info("批量[{}]状态为[{}]，刷新调度任务...", job.getJobName(), job.getStatus());
+						logger.info("刷新调度任务-批量[ {} ]状态为[ {} ]，原调度时间[ {} ]，当前调度时间[ {} ]", job.getJobName(), job.getStatus(), lastMap.get("cron"), newMap.get("cron"));
 					}
 				} else {
 					scheduler.scheduleJob(jobDetail, getTrigger(job));
-					logger.info("批量[{}]状态为[{}]，新增调度任务...", job.getJobName(), job.getStatus());
+					logger.info("新增调度任务-批量[ {} ]状态为[ {} ]，调度时间[ {} ]", job.getJobName(), job.getStatus(), job.getCron());
 				}
 				break;
-			case RUNNING:
-				break;
-			case WAITING:
-				scheduler.deleteJob(jobKey);
-				logger.info("批量[{}]状态为[{}]，任务正在等待执行，需修改状态为RUNABLE才可执行", job.getJobName(), job.getStatus());
-				break;
-			case STOPPED:
 			case FAILED:
+			case STARTING:
+				if(!redisLockUtil.hasJobLock(job.getJobName())) {
+					scheduler.deleteJob(jobKey);
+					scheduler.scheduleJob(jobDetail, getTrigger(job));
+					logger.info("刷新调度任务-批量[ {} ]状态为[ {} ]，调度时间[ {} ]", job.getJobName(), job.getStatus(), job.getCron());
+				}
+				break;
+			case STOPPING:
+			case STOPPED:
+			case ABANDONED:
+			default:
 				if (scheduler.checkExists(jobKey)) {
 					scheduler.deleteJob(jobKey);
-					logger.info("批量[{}]状态为[{}]，删除调度任务...", job.getJobName(), job.getStatus());
+					logger.info("删除调度任务-批量[ {} ]状态为[ {} ]", job.getJobName(), job.getStatus());
 				}
-				break;
-			default:
-				scheduler.deleteJob(jobKey);
-				logger.info("批量[{}]状态为[{}]，删除调度任务...", job.getJobName(), job.getStatus());
 				break;
 			}
 		}

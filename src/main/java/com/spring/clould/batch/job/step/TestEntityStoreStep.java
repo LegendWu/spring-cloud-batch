@@ -22,6 +22,7 @@ public class TestEntityStoreStep extends BaseRemoteStep{
 				.partitioner("testEntityStoreWorkerStep", new KeyStorePartitioner<Cat>(sqlSessionFactory, "com.spring.clould.batch.mapper.CatMapper.loadAllCats", null))
 				.gridSize(DEFAULT_GRID_SIZE)
 				.outputChannel(masterRequests())
+				.listener(stepListener)
 				.build();
 	}
 

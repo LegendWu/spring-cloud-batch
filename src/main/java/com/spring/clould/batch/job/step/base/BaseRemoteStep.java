@@ -11,6 +11,8 @@ import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.jms.dsl.Jms;
 
+import com.spring.clould.batch.job.listener.CommonStepListener;
+
 public class BaseRemoteStep {
 
 	protected static final int DEFAULT_GRID_SIZE = 1000;
@@ -23,6 +25,9 @@ public class BaseRemoteStep {
 
 	@Autowired
 	protected RemotePartitioningWorkerStepBuilderFactory workerStepBuilderFactory;
+	
+	@Autowired
+	protected CommonStepListener stepListener;
 
 	@Bean
 	public DirectChannel masterRequests() {
