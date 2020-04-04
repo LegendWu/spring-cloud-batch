@@ -69,24 +69,24 @@ public class QuartzJobConfig implements Job {
 			//设置任务执行参数
 			JobParameters jobParameters = null;
 			String jobInstanceId = job.getJobInstanceId();
-			if (BhJobStatusEnum.FAILED.equals(job.getStatus())) {
-				jobParameters = new JobParametersBuilder().addString(jobInstanceId, "datetime").toJobParameters();
-			} else if (BhJobStatusEnum.STARTING.equals(job.getStatus())) {
+			if (BhJobStatusEnum.FAILED.equals(job.getStatus()) || BhJobStatusEnum.STARTING.equals(job.getStatus())) {
 				jobParameters = new JobParametersBuilder().addString(jobInstanceId, "datetime").toJobParameters();
 				JobExecution lastExecution = jobRepository.getLastJobExecution(job.getJobName(), jobParameters);
-				for (StepExecution execution : lastExecution.getStepExecutions()) {
-					BatchStatus status = execution.getStatus();
-					if (status.isRunning()) {
-						execution.setStatus(BatchStatus.FAILED);
-						execution.setExitStatus(ExitStatus.FAILED);
-						execution.setEndTime(new Date());
-						jobRepository.update(execution);
+				if(lastExecution != null) {
+					for (StepExecution execution : lastExecution.getStepExecutions()) {
+						BatchStatus status = execution.getStatus();
+						if (status.isRunning()) {
+							execution.setStatus(BatchStatus.FAILED);
+							execution.setExitStatus(ExitStatus.FAILED);
+							execution.setEndTime(new Date());
+							jobRepository.update(execution);
+						}
 					}
+					lastExecution.setStatus(BatchStatus.FAILED);
+					lastExecution.setExitStatus(ExitStatus.FAILED);
+					lastExecution.setEndTime(new Date());
+					jobRepository.update(lastExecution);
 				}
-				lastExecution.setStatus(BatchStatus.FAILED);
-				lastExecution.setExitStatus(ExitStatus.FAILED);
-				lastExecution.setEndTime(new Date());
-				jobRepository.update(lastExecution);
 			} else {
 				if(YesOrNoEnum.YES.equals(job.getIsMultiRun())) {
 					jobInstanceId = DateUtil.parseDateToStr(new Date(), DateUtil.DATE_TIME_FORMAT_YYYYMMDDHHMISSSSS);
