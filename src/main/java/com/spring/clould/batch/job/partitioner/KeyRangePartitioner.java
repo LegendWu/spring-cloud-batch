@@ -12,6 +12,7 @@ import org.springframework.batch.core.partition.support.SimplePartitioner;
 import org.springframework.batch.item.ExecutionContext;
 
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
+import com.spring.clould.batch.util.SeparateUtil;
 
 public class KeyRangePartitioner<T> extends SimplePartitioner {
 
@@ -49,21 +50,19 @@ public class KeyRangePartitioner<T> extends SimplePartitioner {
 		}
 		if(result.size() < gridSize) {
 			ExecutionContext context = partitions.values().iterator().next();
-			context.put("startId", result.get(0));
-			context.put("endId", result.get(result.size()-1));
-			return partitions;
-		}
-		int i = 0;
-		int subListSize = result.size()/gridSize;
-		for (ExecutionContext context : partitions.values()) {
-			context.put("startId", result.get(i*subListSize));
-			if(i == partitions.values().size()-1) {
-				context.put("endId", result.get(result.size()-1));
-			}else {
-				context.put("endId", result.get(((i+1)*subListSize)-1));
+			context.put("fromId", result.get(0));
+			context.put("toId", result.get(result.size()-1));
+		}else {
+			List<Map<String, T>> rangeList = SeparateUtil.separateListRange(result, gridSize);
+			int i = 0;
+			for (ExecutionContext context : partitions.values()) {
+				context.put("fromId", rangeList.get(i).get("fromId"));
+				context.put("toId", rangeList.get(i).get("toId"));
+				i++;
 			}
-			i++;
+			rangeList = null;
 		}
+		result = null;
 		return partitions;
 	}
 	

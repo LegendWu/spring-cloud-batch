@@ -11,7 +11,7 @@
 	</select>
 	
 	<select id="selectByIdRange" parameterType="java.util.HashMap" resultType="com.spring.clould.batch.entity.Cat">
-		SELECT * FROM CAT WHERE ID &gt;= #{startId} AND ID &lt;= #{endId}
+		SELECT * FROM CAT WHERE ID &gt;= #{fromId} AND ID &lt;= #{toId}
 	</select>
 
 </mapper>

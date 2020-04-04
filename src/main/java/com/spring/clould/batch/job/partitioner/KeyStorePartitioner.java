@@ -13,6 +13,7 @@ import org.springframework.batch.item.ExecutionContext;
 
 import com.alibaba.fastjson.JSONArray;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
+import com.spring.clould.batch.util.SeparateUtil;
 
 public class KeyStorePartitioner<T> extends SimplePartitioner {
 
@@ -52,19 +53,14 @@ public class KeyStorePartitioner<T> extends SimplePartitioner {
 			ExecutionContext context = partitions.values().iterator().next();
 			context.put("keyList", JSONArray.toJSONString(result));
 			return partitions;
-		}
-		int i = 0;
-		int subListSize = result.size()/gridSize;
-		for (ExecutionContext context : partitions.values()) {
-			int fromIndex = i*subListSize;
-			int toIndex = result.size();
-			if(i == partitions.values().size()-1) {
-				toIndex = result.size();
-			}else {
-				toIndex = (i+1)*subListSize;
+		}else {
+			int i = 0;
+			List<List<T>> lists = SeparateUtil.separateList(result, gridSize);
+			for (ExecutionContext context : partitions.values()) {
+				context.put("keyList", JSONArray.toJSONString(lists.get(i)));
+				i++;
 			}
-			context.put("keyList", JSONArray.toJSONString(result.subList(fromIndex, toIndex)));
-			i++;
+			lists = null;
 		}
 		result = null;
 		return partitions;

@@ -24,7 +24,7 @@ public class TestKeyStoreTasklet implements Tasklet {
 	
 	@Override
 	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-		logger.info("key store 任务执行中，当前分片startId="+keyList.get(0)+", endId="+keyList.get(keyList.size()-1)+", keyList.size()="+keyList.size());
+		logger.info("key store 任务执行中，当前分片fromId="+keyList.get(0)+", toId="+keyList.get(keyList.size()-1)+", keyList.size()="+keyList.size());
 		return RepeatStatus.FINISHED;
 	}
 	

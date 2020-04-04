@@ -25,7 +25,7 @@ public class TestEntityStoreTasklet implements Tasklet {
 	
 	@Override
 	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-		logger.info("entity store 任务执行中，当前分片startId="+keyList.get(0).getId()+", endId="+keyList.get(keyList.size()-1).getId()+", keyList.size()="+keyList.size());
+		logger.info("entity store 任务执行中，当前分片fromId="+keyList.get(0).getId()+", toId="+keyList.get(keyList.size()-1).getId()+", keyList.size()="+keyList.size());
 		return RepeatStatus.FINISHED;
 	}
 	

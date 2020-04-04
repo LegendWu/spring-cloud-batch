@@ -19,9 +19,9 @@ public class TestKeyRangeTasklet implements Tasklet {
 	
 	private Logger logger = LoggerFactory.getLogger(TestKeyRangeTasklet.class);
 	
-	private int startId;
+	private int fromId;
 	
-	private int endId;
+	private int toId;
 	
 	@Autowired
 	CatMapper catMapper;
@@ -29,16 +29,16 @@ public class TestKeyRangeTasklet implements Tasklet {
 	@Override
 	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
 		Map<String, Object> param = new HashMap<String, Object>();
-		param.put("startId", startId);
-		param.put("endId", endId);
+		param.put("fromId", fromId);
+		param.put("toId", toId);
 		List<Cat> cats = catMapper.selectByIdRange(param);
-		logger.info("key range 任务执行中，当前分片startId="+startId+", endId="+endId+", size="+cats.size());
+		logger.info("key range 任务执行中，当前分片fromId="+fromId+", toId="+toId+", size="+cats.size());
 		return RepeatStatus.FINISHED;
 	}
 	
-	public TestKeyRangeTasklet(int startId, int endId) {
-		this.startId = startId;
-		this.endId = endId;
+	public TestKeyRangeTasklet(int fromId, int toId) {
+		this.fromId = fromId;
+		this.toId = toId;
 	}
 
 }

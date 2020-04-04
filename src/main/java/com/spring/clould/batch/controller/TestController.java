@@ -1,7 +1,5 @@
 package com.spring.clould.batch.controller;
 
-import javax.annotation.PostConstruct;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,27 +13,27 @@ public class TestController {
 
 	@Autowired
 	CatMapper catMapper;
-	
+
 	@Autowired
 	RedisLockUtil redisLockUtil;
-	
+
 //	@PostConstruct
 	public void initCat() {
-		for(int i=0; i<1000050; i++) {
+		for (int i = 0; i < 1000050; i++) {
 			Cat cat = new Cat();
-			cat.setCatname("cat"+i);
-			cat.setCatage(i+"");
-			cat.setCataddress("cat address "+i);
+			cat.setCatname("cat" + i);
+			cat.setCatage(i + "");
+			cat.setCataddress("cat address " + i);
 			catMapper.insert(cat);
-			if(1%10000 == 0) {
+			if (i % 10000 == 0) {
 				System.out.println(i);
 			}
 		}
 	}
-	
+
 	@GetMapping("deleteLock")
 	public void deleteRedisLock() {
 		redisLockUtil.delete("testJob");
 	}
-	
+
 }

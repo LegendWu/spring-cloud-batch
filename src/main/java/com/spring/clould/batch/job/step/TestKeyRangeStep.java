@@ -35,8 +35,8 @@ public class TestKeyRangeStep extends BaseRemoteStep{
 
 	@Bean
 	@StepScope
-	public Tasklet testKeyRangeTasklet(@Value("#{stepExecutionContext[startId]}") final Integer startId,
-			@Value("#{stepExecutionContext[endId]}") final Integer endId) {
-		return new TestKeyRangeTasklet(startId, endId);
+	public Tasklet testKeyRangeTasklet(@Value("#{stepExecutionContext[fromId]}") final Integer fromId,
+			@Value("#{stepExecutionContext[toId]}") final Integer toId) {
+		return new TestKeyRangeTasklet(fromId, toId);
 	}
 }
