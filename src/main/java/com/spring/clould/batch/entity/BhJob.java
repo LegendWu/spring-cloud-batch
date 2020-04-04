@@ -10,6 +10,8 @@ import com.spring.clould.batch.entity.enums.BhJobStatusEnum;
 @SuppressWarnings("serial")
 public class BhJob extends Model<BhJob> {
 
+	private int id;
+	
 	private String jobName;
 
     private String jobGroup;
@@ -21,6 +23,14 @@ public class BhJob extends Model<BhJob> {
     private String description;
 
     private BhJobStatusEnum status;
+    
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
 
 	public String getJobName() {
         return jobName;

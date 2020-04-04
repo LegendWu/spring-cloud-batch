@@ -10,6 +10,8 @@ public interface CatMapper extends BaseMapper<Cat> {
 
 	List<Integer> loadKeys(Map<String, Object> param);
 	
+	List<Cat> loadAllCats(Map<String, Object> param);
+	
 	List<Cat> selectByIdRange(Map<String, Object> param);
 	
 }

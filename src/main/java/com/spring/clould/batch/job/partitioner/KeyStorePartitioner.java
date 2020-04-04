@@ -11,11 +11,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.partition.support.SimplePartitioner;
 import org.springframework.batch.item.ExecutionContext;
 
+import com.alibaba.fastjson.JSONArray;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 
-public class KeyRangePartitioner<T> extends SimplePartitioner {
+public class KeyStorePartitioner<T> extends SimplePartitioner {
 
-	private Logger logger = LoggerFactory.getLogger(KeyRangePartitioner.class);
+	private Logger logger = LoggerFactory.getLogger(KeyStorePartitioner.class);
 	
 	private SqlSessionFactory sqlSessionFactory;
 
@@ -25,7 +26,7 @@ public class KeyRangePartitioner<T> extends SimplePartitioner {
 	
 	private Map<String, Object> parameters;
 	
-	public KeyRangePartitioner(SqlSessionFactory sqlSessionFactory, String queryId, Map<String, Object> parameters) {
+	public KeyStorePartitioner(SqlSessionFactory sqlSessionFactory, String queryId, Map<String, Object> parameters) {
 		this.sqlSessionFactory = sqlSessionFactory;
 		this.queryId = queryId;
 		this.parameters = parameters;
@@ -49,21 +50,23 @@ public class KeyRangePartitioner<T> extends SimplePartitioner {
 		}
 		if(result.size() < gridSize) {
 			ExecutionContext context = partitions.values().iterator().next();
-			context.put("startId", result.get(0));
-			context.put("endId", result.get(result.size()-1));
+			context.put("keyList", JSONArray.toJSONString(result));
 			return partitions;
 		}
 		int i = 0;
 		int subListSize = result.size()/gridSize;
 		for (ExecutionContext context : partitions.values()) {
-			context.put("startId", result.get(i*subListSize));
+			int fromIndex = i*subListSize;
+			int toIndex = result.size();
 			if(i == partitions.values().size()-1) {
-				context.put("endId", result.get(result.size()-1));
+				toIndex = result.size();
 			}else {
-				context.put("endId", result.get(((i+1)*subListSize)-1));
+				toIndex = (i+1)*subListSize;
 			}
+			context.put("keyList", JSONArray.toJSONString(result.subList(fromIndex, toIndex)));
 			i++;
 		}
+		result = null;
 		return partitions;
 	}
 	

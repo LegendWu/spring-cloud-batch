@@ -3,7 +3,11 @@
 <mapper namespace="com.spring.clould.batch.mapper.CatMapper">
 
 	<select id="loadKeys" parameterType="java.util.HashMap" resultType="java.lang.Integer">
-		SELECT ID FROM CAT
+		SELECT ID FROM CAT ORDER BY ID
+	</select>
+	
+	<select id="loadAllCats" parameterType="java.util.HashMap" resultType="com.spring.clould.batch.entity.Cat">
+		SELECT * FROM CAT
 	</select>
 	
 	<select id="selectByIdRange" parameterType="java.util.HashMap" resultType="com.spring.clould.batch.entity.Cat">

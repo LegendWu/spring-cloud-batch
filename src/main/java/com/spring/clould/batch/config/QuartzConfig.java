@@ -30,6 +30,7 @@ import com.spring.clould.batch.entity.BhJob;
 import com.spring.clould.batch.mapper.BhJobMapper;
 import com.spring.clould.batch.util.CompareUtil;
 import com.spring.clould.batch.util.ConvertUtil;
+import com.spring.clould.batch.util.RedisLockUtil;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -48,6 +49,9 @@ public class QuartzConfig {
 
 	@Autowired
 	private BhJobMapper bhJobMapper;
+	
+	@Autowired
+	RedisLockUtil redisLockUtil;
 	
     //配置JobFactory
     @Bean
@@ -102,7 +106,7 @@ public class QuartzConfig {
 	 * 
 	 * @throws SchedulerException
 	 */
-	@Scheduled(fixedRate=30000)
+	@Scheduled(fixedRate=10000)
 	public void jobRefresh() throws SchedulerException {
 		reStartAllJobs();
 	}
@@ -129,8 +133,9 @@ public class QuartzConfig {
 					JobDataMap lastMap = scheduler.getJobDetail(jobKey).getJobDataMap();
 					List<String> excludeFields = new ArrayList<String>();
 					excludeFields.add("status");
-					// 如果任务更新，则刷新调度任务
-					if (CompareUtil.isMapDifferent(newMap, lastMap, excludeFields)) {
+					// 如果任务更新，并且redis锁不存在，则刷新调度任务
+					if (CompareUtil.isMapDifferent(newMap, lastMap, excludeFields)
+							&& !redisLockUtil.hasKey(job.getJobName())) {
 						scheduler.deleteJob(jobKey);
 						scheduler.scheduleJob(jobDetail, getTrigger(job));
 						logger.info("批量[{}]状态为[{}]，刷新调度任务...", job.getJobName(), job.getStatus());

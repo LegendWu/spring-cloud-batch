@@ -23,7 +23,6 @@ import org.springframework.stereotype.Component;
 
 import com.spring.clould.batch.entity.BhJob;
 import com.spring.clould.batch.mapper.BhJobMapper;
-import com.spring.clould.batch.mapper.BhJobStepMapper;
 import com.spring.clould.batch.util.BeanUtil;
 import com.spring.clould.batch.util.ConvertUtil;
 import com.spring.clould.batch.util.IPUtil;
@@ -43,9 +42,6 @@ public class QuartzJobConfig implements Job {
 	BhJobMapper bhJobMapper;
 
 	@Autowired
-	BhJobStepMapper bhJobStepMapper;
-
-	@Autowired
 	JobLauncher jobLauncher;
 
 	@Autowired
@@ -58,6 +54,8 @@ public class QuartzJobConfig implements Job {
 		// 获取分布式锁
 		boolean isLock = redisLockUtil.lock(job.getJobName());
 		if (isLock) {
+			//重新获取一下数据库里的job信息
+			job = bhJobMapper.selectById(job.getId());
 			logger.info("当前机器[{}]获取到分布式锁，开始执行调度任务[{}]", IPUtil.getLocalIP(), job.getJobName());
 			JobParameters jobParameters = new JobParametersBuilder().addDate("date", new Date()).toJobParameters();
 //			JobParameters jobParameters = new JobParametersBuilder().addString("20200323", "yyyyMMdd").toJobParameters();
