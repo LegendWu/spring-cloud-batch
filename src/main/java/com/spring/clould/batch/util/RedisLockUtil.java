@@ -97,4 +97,13 @@ public class RedisLockUtil {
 			return false;
 		}
 	}
+	
+	/**
+	 * 判断是否存在任务锁
+	 * @param jobName
+	 * @return
+	 */
+	public boolean hasJobLock(String jobName) {
+		return hasKey(LOCK_JOB_PREFIX+jobName);
+	}
 }

@@ -17,7 +17,7 @@ public class TestKeyStoreTasklet implements Tasklet {
 	
 	private Logger logger = LoggerFactory.getLogger(TestKeyStoreTasklet.class);
 	
-	private List<String> keyList;
+	private List<Integer> keyList;
 	
 	@Autowired
 	CatMapper catMapper;
@@ -29,7 +29,7 @@ public class TestKeyStoreTasklet implements Tasklet {
 	}
 	
 	public TestKeyStoreTasklet(String keyList) {
-		this.keyList = JSONArray.parseArray(keyList, String.class);
+		this.keyList = JSONArray.parseArray(keyList, Integer.class);
 	}
 
 }
