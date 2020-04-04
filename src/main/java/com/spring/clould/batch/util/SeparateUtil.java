@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.util.CollectionUtils;
+
 /**
  * Description: list拆分工具类
  * Copyright: Copyright (c) 2020
@@ -20,6 +22,9 @@ public class SeparateUtil {
 	 * @return
 	 */
 	public static <T> List<List<T>> separateList(List<T> source, int n) {
+		if(CollectionUtils.isEmpty(source) || n == 0) {
+			return null;
+		}
 		List<List<T>> result = new ArrayList<>();
 		// (先计算出余数)
 		int remaider = source.size() % n;
@@ -47,6 +52,9 @@ public class SeparateUtil {
 	 * @return
 	 */
 	public static <T> List<Map<String, T>> separateListRange(List<T> source, int n) {
+		if(CollectionUtils.isEmpty(source) || n == 0) {
+			return null;
+		}
 		List<Map<String, T>> result = new ArrayList<>();
 		// (先计算出余数)
 		int remaider = source.size() % n;

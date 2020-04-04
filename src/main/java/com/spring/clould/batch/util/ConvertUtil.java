@@ -7,7 +7,7 @@ import org.quartz.JobDataMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.spring.clould.batch.entity.BhJob;
+import com.spring.clould.batch.entity.BatchJob;
 
 /**
  * Description: map与类转换
@@ -26,7 +26,7 @@ public class ConvertUtil {
 	 * @param job
 	 * @return
 	 */
-	public static JobDataMap convertToJobDataMap(BhJob job) {
+	public static JobDataMap convertToJobDataMap(BatchJob job) {
 		JobDataMap map = new JobDataMap();
 		Field[] fields = job.getClass().getDeclaredFields();
 		for (Field field : fields) {
@@ -47,10 +47,10 @@ public class ConvertUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	public static BhJob convertToBhJob(JobDataMap map) {
+	public static BatchJob convertToBatchJob(JobDataMap map) {
 		if (map == null)
 			return null;
-		BhJob job = new BhJob();
+		BatchJob job = new BatchJob();
 		Field[] fields = job.getClass().getDeclaredFields();
 		for (Field field : fields) {
 			int mod = field.getModifiers();

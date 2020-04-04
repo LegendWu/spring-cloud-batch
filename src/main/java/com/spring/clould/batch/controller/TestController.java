@@ -1,5 +1,7 @@
 package com.spring.clould.batch.controller;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,9 +26,9 @@ public class TestController {
 	@Autowired
 	RedisLockUtil redisLockUtil;
 
-//	@PostConstruct
+	@PostConstruct
 	public void initCat() {
-		for (int i = 0; i < 100050; i++) {
+		for (int i = 0; i < 10080; i++) {
 			Cat cat = new Cat();
 			cat.setCatname("cat" + i);
 			cat.setCatage(i + "");

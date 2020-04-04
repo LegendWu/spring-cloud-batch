@@ -3,7 +3,7 @@ package com.spring.clould.batch.entity;
 import org.springframework.batch.core.BatchStatus;
 
 import com.baomidou.mybatisplus.extension.activerecord.Model;
-import com.spring.clould.batch.entity.enums.BhJobStatusEnum;
+import com.spring.clould.batch.entity.enums.BatchJobStatusEnum;
 import com.spring.clould.batch.entity.enums.YesOrNoEnum;
 
 /**
@@ -14,7 +14,7 @@ import com.spring.clould.batch.entity.enums.YesOrNoEnum;
  * @version 1.0
  */
 @SuppressWarnings("serial")
-public class BhJob extends Model<BhJob> {
+public class BatchJob extends Model<BatchJob> {
 
 	private int id;
 	
@@ -28,7 +28,7 @@ public class BhJob extends Model<BhJob> {
 
     private String description;
 
-    private BhJobStatusEnum status;
+    private BatchJobStatusEnum status;
     
     private YesOrNoEnum isMultiRun;
     
@@ -80,11 +80,11 @@ public class BhJob extends Model<BhJob> {
         this.description = description == null ? null : description.trim();
     }
 
-    public BhJobStatusEnum getStatus() {
+    public BatchJobStatusEnum getStatus() {
         return status;
     }
 
-    public void setStatus(BhJobStatusEnum status) {
+    public void setStatus(BatchJobStatusEnum status) {
         this.status = status;
     }
 
@@ -99,31 +99,31 @@ public class BhJob extends Model<BhJob> {
 	public void convertStatus(BatchStatus status) {
 		switch (status) {
 		case COMPLETED:
-			setStatus(BhJobStatusEnum.COMPLETED);
+			setStatus(BatchJobStatusEnum.COMPLETED);
 			break;
 		case STARTING:
-			setStatus(BhJobStatusEnum.STARTING);
+			setStatus(BatchJobStatusEnum.STARTING);
 			break;
 		case STARTED:
-			setStatus(BhJobStatusEnum.STARTED);
+			setStatus(BatchJobStatusEnum.STARTED);
 			break;
 		case STOPPING:
-			setStatus(BhJobStatusEnum.STOPPING);
+			setStatus(BatchJobStatusEnum.STOPPING);
 			break;
 		case STOPPED:
-			setStatus(BhJobStatusEnum.STOPPED);
+			setStatus(BatchJobStatusEnum.STOPPED);
 			break;
 		case FAILED:
-			setStatus(BhJobStatusEnum.FAILED);
+			setStatus(BatchJobStatusEnum.FAILED);
 			break;
 		case ABANDONED:
-			setStatus(BhJobStatusEnum.ABANDONED);
+			setStatus(BatchJobStatusEnum.ABANDONED);
 			break;
 		case UNKNOWN:
-			setStatus(BhJobStatusEnum.UNKNOWN);
+			setStatus(BatchJobStatusEnum.UNKNOWN);
 			break;
 		default:
-			setStatus(BhJobStatusEnum.UNKNOWN);
+			setStatus(BatchJobStatusEnum.UNKNOWN);
 			break;
 		}
 	}

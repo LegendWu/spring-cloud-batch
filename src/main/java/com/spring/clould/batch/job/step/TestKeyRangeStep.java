@@ -37,14 +37,13 @@ public class TestKeyRangeStep extends BaseRemoteStep{
 		return this.workerStepBuilderFactory
 				.get("testKeyRangeWorkerStep")
 				.inputChannel(workerRequests())
-				.tasklet(testKeyRangeTasklet(null, null))
+				.tasklet(testKeyRangeTasklet(null))
 				.build();
 	}
 
 	@Bean
 	@StepScope
-	public Tasklet testKeyRangeTasklet(@Value("#{stepExecutionContext[fromId]}") final Integer fromId,
-			@Value("#{stepExecutionContext[toId]}") final Integer toId) {
-		return new TestKeyRangeTasklet(fromId, toId);
+	public Tasklet testKeyRangeTasklet(@Value("#{stepExecutionContext[keyMap]}") final String keyMap) {
+		return new TestKeyRangeTasklet(keyMap);
 	}
 }

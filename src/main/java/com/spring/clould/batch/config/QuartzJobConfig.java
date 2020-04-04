@@ -25,10 +25,10 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.spring.clould.batch.entity.BhJob;
-import com.spring.clould.batch.entity.enums.BhJobStatusEnum;
+import com.spring.clould.batch.entity.BatchJob;
+import com.spring.clould.batch.entity.enums.BatchJobStatusEnum;
 import com.spring.clould.batch.entity.enums.YesOrNoEnum;
-import com.spring.clould.batch.mapper.BhJobMapper;
+import com.spring.clould.batch.mapper.BatchJobMapper;
 import com.spring.clould.batch.util.BeanUtil;
 import com.spring.clould.batch.util.ConvertUtil;
 import com.spring.clould.batch.util.DateUtil;
@@ -50,7 +50,7 @@ public class QuartzJobConfig implements Job {
 	private Logger logger = LoggerFactory.getLogger(QuartzJobConfig.class);
 
 	@Autowired
-	BhJobMapper bhJobMapper;
+	BatchJobMapper batchJobMapper;
 
 	@Autowired
 	JobLauncher jobLauncher;
@@ -64,16 +64,16 @@ public class QuartzJobConfig implements Job {
 	@Override
 	public void execute(JobExecutionContext executorContext) throws JobExecutionException {
 		JobDataMap jobDataMap = executorContext.getMergedJobDataMap();
-		BhJob job = ConvertUtil.convertToBhJob(jobDataMap);
+		BatchJob job = ConvertUtil.convertToBatchJob(jobDataMap);
 		// 获取分布式锁
 		boolean isLock = redisLockUtil.lockJob(job.getJobName());
 		if (isLock) {
 			//重新获取一下数据库里的job信息
-			job = bhJobMapper.selectById(job.getId());
+			job = batchJobMapper.selectById(job.getId());
 			//设置任务执行参数
 			JobParameters jobParameters = null;
 			String jobInstanceId = job.getJobInstanceId();
-			if (BhJobStatusEnum.FAILED.equals(job.getStatus()) || BhJobStatusEnum.STARTING.equals(job.getStatus())) {
+			if (BatchJobStatusEnum.FAILED.equals(job.getStatus()) || BatchJobStatusEnum.STARTING.equals(job.getStatus())) {
 				jobParameters = new JobParametersBuilder().addString(jobInstanceId, "datetime").toJobParameters();
 				JobExecution lastExecution = jobRepository.getLastJobExecution(job.getJobName(), jobParameters);
 				if(lastExecution != null) {
@@ -102,8 +102,8 @@ public class QuartzJobConfig implements Job {
 			}
 			//更新job实例ID及状态
 			job.setJobInstanceId(jobInstanceId);
-			job.setStatus(BhJobStatusEnum.STARTING);
-			bhJobMapper.updateById(job);
+			job.setStatus(BatchJobStatusEnum.STARTING);
+			batchJobMapper.updateJobStatusOrInstanceId(job);
 			try {
 				//执行批量任务
 				JobExecution result = jobLauncher.run((org.springframework.batch.core.Job) BeanUtil.getContext().getBean(job.getJobName()), jobParameters);
@@ -111,14 +111,14 @@ public class QuartzJobConfig implements Job {
 				if(null != result) {
 					//更新任务状态
 					job.convertStatus(result.getStatus());
-					bhJobMapper.updateById(job);
+					batchJobMapper.updateJobStatusOrInstanceId(job);
 				}
 			} catch (JobInstanceAlreadyCompleteException e) {
 				logger.warn("任务[ {} ]当天已经执行完成，禁止重复执行，执行日期：[ {} ]", job.getJobName(), jobInstanceId);
 			} catch (BeansException | JobExecutionAlreadyRunningException | JobRestartException | JobParametersInvalidException e) {
 				logger.error("批量执行异常", e);
 				job.convertStatus(BatchStatus.FAILED);
-				bhJobMapper.updateById(job);
+				batchJobMapper.updateJobStatusOrInstanceId(job);
 			} finally {
 				logger.info("删除任务[ {} ]分布式锁", job.getJobName());
 				redisLockUtil.deleleJobLock(job.getJobName());

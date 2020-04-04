@@ -34,8 +34,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.scheduling.quartz.SpringBeanJobFactory;
 
-import com.spring.clould.batch.entity.BhJob;
-import com.spring.clould.batch.mapper.BhJobMapper;
+import com.spring.clould.batch.entity.BatchJob;
+import com.spring.clould.batch.mapper.BatchJobMapper;
 import com.spring.clould.batch.util.ConvertUtil;
 import com.spring.clould.batch.util.RedisLockUtil;
 
@@ -55,7 +55,7 @@ public class QuartzConfig {
 	private SchedulerFactoryBean factory;
 
 	@Autowired
-	private BhJobMapper bhJobMapper;
+	private BatchJobMapper batchJobMapper;
 	
 	@Autowired
 	RedisLockUtil redisLockUtil;
@@ -130,9 +130,9 @@ public class QuartzConfig {
 		if(!scheduler.isStarted()) {
 			scheduler.start();
 		}
-		List<BhJob> jobs = bhJobMapper.selectList(null);
+		List<BatchJob> jobs = batchJobMapper.selectList(null);
 		List<String> allJobs = new ArrayList<String>();
-		for (BhJob job : jobs) {
+		for (BatchJob job : jobs) {
 			allJobs.add(job.getJobName());
 			JobKey jobKey = getJobKey(job);
 			JobDataMap newMap = ConvertUtil.convertToJobDataMap(job);
@@ -200,7 +200,7 @@ public class QuartzConfig {
 	 * @param job
 	 * @return
 	 */
-	public Trigger getTrigger(BhJob job) {
+	public Trigger getTrigger(BatchJob job) {
 		return TriggerBuilder.newTrigger().withIdentity(job.getJobName(), job.getJobGroup())
 				.withSchedule(CronScheduleBuilder.cronSchedule(job.getCron())).build();
 	}
@@ -211,7 +211,7 @@ public class QuartzConfig {
 	 * @param job
 	 * @return
 	 */
-	public JobKey getJobKey(BhJob job) {
+	public JobKey getJobKey(BatchJob job) {
 		return JobKey.jobKey(job.getJobName(), job.getJobGroup());
 	}
 }

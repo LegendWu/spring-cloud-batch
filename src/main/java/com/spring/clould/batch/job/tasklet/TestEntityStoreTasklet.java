@@ -9,6 +9,7 @@ import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 
 import com.alibaba.fastjson.JSONArray;
 import com.spring.clould.batch.entity.Cat;
@@ -32,12 +33,17 @@ public class TestEntityStoreTasklet implements Tasklet {
 	
 	@Override
 	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+		if(null == keyList) {
+			return RepeatStatus.FINISHED; 
+		}
 		logger.info("entity store 任务执行中，当前分片fromId="+keyList.get(0).getId()+", toId="+keyList.get(keyList.size()-1).getId()+", keyList.size()="+keyList.size());
 		return RepeatStatus.FINISHED;
 	}
 	
 	public TestEntityStoreTasklet(String keyList) {
-		this.keyList = JSONArray.parseArray(keyList, Cat.class);
+		if(!StringUtils.isEmpty(keyList)) {
+			this.keyList = JSONArray.parseArray(keyList, Cat.class);
+		}
 	}
 
 }

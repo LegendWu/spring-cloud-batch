@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  * @version 1.0
  */
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
-public enum BhJobStatusEnum  implements IEnum<String> {
+public enum BatchJobStatusEnum  implements IEnum<String> {
 	COMPLETED("COMPLETED", "执行完成"),
 	STARTING("STARTING", "正在执行"),
 	STARTED("STARTED", "可执行的"),
@@ -24,7 +24,7 @@ public enum BhJobStatusEnum  implements IEnum<String> {
     private String value;
     private String desc;
 
-    BhJobStatusEnum(final String value, final String desc) {
+    BatchJobStatusEnum(final String value, final String desc) {
         this.value = value;
         this.desc = desc;
     }

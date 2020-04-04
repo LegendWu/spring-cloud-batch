@@ -1,5 +1,6 @@
 package com.spring.clould.batch.job.partitioner;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.partition.support.SimplePartitioner;
 import org.springframework.batch.item.ExecutionContext;
 
+import com.alibaba.fastjson.JSONArray;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.spring.clould.batch.util.SeparateUtil;
 
@@ -45,30 +47,25 @@ public class KeyRangePartitioner<T> extends SimplePartitioner {
 			sqlSessionTemplate = new SqlSessionTemplate(sqlSessionFactory, ExecutorType.BATCH);
 	    }
 		List<T> result = sqlSessionTemplate.selectList(queryId, parameters);
-		if(CollectionUtils.isEmpty(result) || result.size() < gridSize) {
+		if(CollectionUtils.isEmpty(result)) {
+			gridSize = 0;
+		} else if (result.size() < gridSize) {
 			gridSize = 1;
-		}else {
+		} else {
 			gridSize = result.size()%gridSize>0 ? result.size()/gridSize+1 : result.size()/gridSize;
 		}
 		logger.info("列表大小[ {} ]，分片大小[ {} ]", null==result?0:result.size(), gridSize);
 		Map<String, ExecutionContext> partitions = super.partition(gridSize);
-		if(CollectionUtils.isEmpty(result)) {
-			return partitions;
+		List<Map<String, T>> rangeList = SeparateUtil.separateListRange(result, gridSize);
+		int i = 0;
+		for (ExecutionContext context : partitions.values()) {
+			Map<String, Object> keyMap = new HashMap<String, Object>();
+			keyMap.put("fromId", rangeList.get(i).get("fromId"));
+			keyMap.put("toId", rangeList.get(i).get("toId"));
+			context.put("keyMap", JSONArray.toJSONString(keyMap));
+			i++;
 		}
-		if(result.size() < gridSize) {
-			ExecutionContext context = partitions.values().iterator().next();
-			context.put("fromId", result.get(0));
-			context.put("toId", result.get(result.size()-1));
-		}else {
-			List<Map<String, T>> rangeList = SeparateUtil.separateListRange(result, gridSize);
-			int i = 0;
-			for (ExecutionContext context : partitions.values()) {
-				context.put("fromId", rangeList.get(i).get("fromId"));
-				context.put("toId", rangeList.get(i).get("toId"));
-				i++;
-			}
-			rangeList = null;
-		}
+		rangeList = null;
 		result = null;
 		return partitions;
 	}

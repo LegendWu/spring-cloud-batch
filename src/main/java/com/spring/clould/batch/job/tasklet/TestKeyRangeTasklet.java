@@ -1,6 +1,5 @@
 package com.spring.clould.batch.job.tasklet;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -11,7 +10,9 @@ import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 
+import com.alibaba.fastjson.JSONArray;
 import com.spring.clould.batch.entity.Cat;
 import com.spring.clould.batch.mapper.CatMapper;
 
@@ -26,26 +27,25 @@ public class TestKeyRangeTasklet implements Tasklet {
 	
 	private Logger logger = LoggerFactory.getLogger(TestKeyRangeTasklet.class);
 	
-	private int fromId;
-	
-	private int toId;
+	private Map<String, Object> keyMap;
 	
 	@Autowired
 	CatMapper catMapper;
 	
 	@Override
 	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-		Map<String, Object> param = new HashMap<String, Object>();
-		param.put("fromId", fromId);
-		param.put("toId", toId);
-		List<Cat> cats = catMapper.selectByIdRange(param);
-		logger.info("key range 任务执行中，当前分片fromId="+fromId+", toId="+toId+", size="+cats.size());
+		if(null == keyMap) {
+			return RepeatStatus.FINISHED;
+		}
+		List<Cat> cats = catMapper.selectByIdRange(keyMap);
+		logger.info("key range 任务执行中，当前分片fromId="+keyMap.get("fromId")+", toId="+keyMap.get("toId")+", size="+cats.size());
 		return RepeatStatus.FINISHED;
 	}
 	
-	public TestKeyRangeTasklet(int fromId, int toId) {
-		this.fromId = fromId;
-		this.toId = toId;
+	public TestKeyRangeTasklet(String keyMap) {
+		if(!StringUtils.isEmpty(keyMap)) {
+			this.keyMap = JSONArray.parseObject(keyMap);
+		}
 	}
 
 }

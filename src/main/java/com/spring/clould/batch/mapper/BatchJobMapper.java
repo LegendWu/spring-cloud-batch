@@ -1,7 +1,7 @@
 package com.spring.clould.batch.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.spring.clould.batch.entity.BhJob;
+import com.spring.clould.batch.entity.BatchJob;
 
 /**
  * Description: 任务mapper
@@ -10,10 +10,12 @@ import com.spring.clould.batch.entity.BhJob;
  * @date 2020年4月4日  
  * @version 1.0
  */
-public interface BhJobMapper extends BaseMapper<BhJob> {
+public interface BatchJobMapper extends BaseMapper<BatchJob> {
+	
 	/**
-	 * 自定义方法，删除所有任务
+	 * 更新任务状态或者实例ID
+	 * @param job
 	 * @return
 	 */
-	int deleteAll();
+	int updateJobStatusOrInstanceId(BatchJob job);
 }

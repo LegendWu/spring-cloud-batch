@@ -46,29 +46,22 @@ public class KeyStorePartitioner<T> extends SimplePartitioner {
 			sqlSessionTemplate = new SqlSessionTemplate(sqlSessionFactory, ExecutorType.BATCH);
 	    }
 		List<T> result = sqlSessionTemplate.selectList(queryId, parameters);
-		if(CollectionUtils.isEmpty(result) || result.size() < gridSize) {
+		if(CollectionUtils.isEmpty(result)) {
+			gridSize = 0;
+		} else if (result.size() < gridSize){
 			gridSize = 1;
-		}else {
+		} else {
 			gridSize = result.size()%gridSize>0 ? result.size()/gridSize+1 : result.size()/gridSize;
 		}
 		logger.info("列表大小[ {} ]，分片大小[ {} ]", null==result?0:result.size(), gridSize);
 		Map<String, ExecutionContext> partitions = super.partition(gridSize);
-		if(CollectionUtils.isEmpty(result)) {
-			return partitions;
+		int i = 0;
+		List<List<T>> lists = SeparateUtil.separateList(result, gridSize);
+		for (ExecutionContext context : partitions.values()) {
+			context.put("keyList", JSONArray.toJSONString(lists.get(i)));
+			i++;
 		}
-		if(result.size() < gridSize) {
-			ExecutionContext context = partitions.values().iterator().next();
-			context.put("keyList", JSONArray.toJSONString(result));
-			return partitions;
-		}else {
-			int i = 0;
-			List<List<T>> lists = SeparateUtil.separateList(result, gridSize);
-			for (ExecutionContext context : partitions.values()) {
-				context.put("keyList", JSONArray.toJSONString(lists.get(i)));
-				i++;
-			}
-			lists = null;
-		}
+		lists = null;
 		result = null;
 		return partitions;
 	}
