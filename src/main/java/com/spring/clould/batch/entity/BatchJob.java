@@ -34,6 +34,10 @@ public class BatchJob extends Model<BatchJob> {
     
     private YesOrNoEnum isMultiRun;
     
+    private int maxRetryTimes;
+    
+    private int retryTimes;
+    
 	public int getId() {
 		return id;
 	}
@@ -106,6 +110,22 @@ public class BatchJob extends Model<BatchJob> {
 		this.isMultiRun = isMultiRun;
 	}
 	
+	public int getMaxRetryTimes() {
+		return maxRetryTimes;
+	}
+
+	public void setMaxRetryTimes(int maxRetryTimes) {
+		this.maxRetryTimes = maxRetryTimes;
+	}
+
+	public int getRetryTimes() {
+		return retryTimes;
+	}
+
+	public void setRetryTimes(int retryTimes) {
+		this.retryTimes = retryTimes;
+	}
+
 	public void convertStatus(BatchStatus status) {
 		switch (status) {
 		case COMPLETED:

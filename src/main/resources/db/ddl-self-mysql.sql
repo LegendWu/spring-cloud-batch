@@ -10,6 +10,8 @@ CREATE TABLE `BATCH_JOB` (
    `DESCRIPTION` varchar(200) DEFAULT NULL COMMENT '任务描述',
    `STATUS` varchar(20) DEFAULT NULL COMMENT '任务状态',
    `IS_MULTI_RUN` varchar(10) DEFAULT 'YES' COMMENT '当天任务是否可以多次执行',
+   `MAX_RETRY_TIMES` int(11) DEFAULT -1 COMMENT '最大异常重试次数（-1代表无限制）',
+   `RETRY_TIMES` int(11) DEFAULT 0 COMMENT '当前重试次数',
    PRIMARY KEY (`ID`)
  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
  

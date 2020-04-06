@@ -21,13 +21,13 @@ public class CommonStepListener implements StepExecutionListener{
 
 	@Override
 	public void beforeStep(StepExecution stepExecution) {
-		logger.info("=========步骤 [ {} ] 开始执行=================", stepExecution.getStepName());
+		logger.info("=========步骤[{}]开始执行=================", stepExecution.getStepName());
 	}
 
 	@Override
 	public ExitStatus afterStep(StepExecution stepExecution) {
 		long start = stepExecution.getStartTime().getTime();
-		logger.info("=========步骤 [ {} ] 结束执行================= ### 耗时：{} ms", stepExecution.getStepName(), System.currentTimeMillis()-start);
+		logger.info("=========步骤[{}]结束执行================= ### 耗时：{} ms", stepExecution.getStepName(), System.currentTimeMillis()-start);
 		return null;
 	}
 

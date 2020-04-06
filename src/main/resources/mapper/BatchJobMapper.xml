@@ -6,10 +6,6 @@
 		UPDATE BATCH_JOB SET STATUS=#{status}, JOB_INSTANCE_ID=#{jobInstanceId} WHERE ID=#{id}
 	</update>
 	
-	<update id="updateJobCronByTemplate" parameterType="com.spring.clould.batch.entity.BatchJob" >
-		UPDATE BATCH_JOB SET CRON=CRON_TEMPLATE WHERE ID=#{id}
-	</update>
-	
 	<update id="updateJobExecutionFailed" parameterType="java.lang.Long" >
 		UPDATE BATCH_JOB_EXECUTION SET STATUS='FAILED',EXIT_CODE='FAILED',END_TIME=NOW() WHERE JOB_EXECUTION_ID=#{jobExecutionId}
 	</update>

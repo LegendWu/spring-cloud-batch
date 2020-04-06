@@ -20,13 +20,6 @@ public interface BatchJobMapper extends BaseMapper<BatchJob> {
 	int updateJobStatusOrInstanceId(BatchJob job);
 	
 	/**
-	 * 更新job cron
-	 * @param job
-	 * @return
-	 */
-	int updateJobCronByTemplate(BatchJob job);
-	
-	/**
 	 * 更新任务为失败
 	 * @param jobExecutionId
 	 * @return
