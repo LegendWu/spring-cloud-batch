@@ -2,6 +2,7 @@ package com.spring.clould.batch.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.spring.clould.batch.entity.Cat;
@@ -39,8 +40,9 @@ public class TestController {
 	}
 
 	@GetMapping("deleteLock")
-	public void deleteRedisLock() {
-		redisLockUtil.deleleJobLock("testJob");
+	public void deleteRedisLock(@RequestParam String key) {
+		redisLockUtil.deleleJobLock(key);
+		redisLockUtil.deleleJobRetryLock(key);
 	}
 
 }

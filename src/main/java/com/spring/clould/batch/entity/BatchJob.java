@@ -38,6 +38,8 @@ public class BatchJob extends Model<BatchJob> {
     
     private int retryTimes;
     
+    private int retryAfterFailed;
+    
 	public int getId() {
 		return id;
 	}
@@ -124,6 +126,14 @@ public class BatchJob extends Model<BatchJob> {
 
 	public void setRetryTimes(int retryTimes) {
 		this.retryTimes = retryTimes;
+	}
+
+	public int getRetryAfterFailed() {
+		return retryAfterFailed;
+	}
+
+	public void setRetryAfterFailed(int retryAfterFailed) {
+		this.retryAfterFailed = retryAfterFailed;
 	}
 
 	public void convertStatus(BatchStatus status) {

@@ -21,9 +21,13 @@ public class RedisLockUtil {
 	RedisTemplate<String, Object> redisTemplate;
 
 	public static final String LOCK_JOB_PREFIX = "LOCK_JOB_"; // 任务分布式锁
+	public static final int LOCK_JOB_EXPIRE = 12*60*60*1000; // 分布式锁失效时间12小时
+	
 	public static final String LOCK_JOB_REFRESH = "LOCK_JOB_REFRESH"; // 定时刷新任务分布式锁
-	public static final int LOCK_JOB_EXPIRE = 28800000; // 分布式锁失效时间8小时
-	public static final int LOCK_JOB_REFRESH_EXPIRE = 30000; // 分布式锁失效时间30S
+	public static final int LOCK_JOB_REFRESH_EXPIRE = 30*1000; // 分布式锁失效时间30S
+	
+	public static final String LOCK_JOB_RETRY_PREFIX = "LOCK_JOB_RETRY_"; // 任务重试分布式锁
+	public static final int LOCK_JOB_RETRY_EXPIRE = 5*60*1000; // 任务重试分布式锁失效时间5分钟
 	
 	/**
 	 * 分布式锁
@@ -73,6 +77,14 @@ public class RedisLockUtil {
 	}
 	
 	/**
+	 * 任务重试分布式锁
+	 * @return
+	 */
+	public boolean lockJobRetry(String jobName) {
+		return lock(LOCK_JOB_RETRY_PREFIX+jobName, LOCK_JOB_RETRY_EXPIRE);
+	}
+	
+	/**
 	 * 删除分布式锁
 	 * 
 	 * @param key
@@ -88,6 +100,15 @@ public class RedisLockUtil {
 	 */
 	public void deleleJobRefreshLock() {
 		redisTemplate.delete(LOCK_JOB_REFRESH);
+	}
+	
+	/**
+	 * 删除刷新任务分布式锁
+	 * 
+	 * @param key
+	 */
+	public void deleleJobRetryLock(String jobName) {
+		redisTemplate.delete(LOCK_JOB_RETRY_PREFIX+jobName);
 	}
 
 	/**
@@ -112,5 +133,14 @@ public class RedisLockUtil {
 	 */
 	public boolean hasJobLock(String jobName) {
 		return hasKey(LOCK_JOB_PREFIX+jobName);
+	}
+	
+	/**
+	 * 判断是否存在任务重试锁
+	 * @param jobName
+	 * @return
+	 */
+	public boolean hasJobRetryLock(String jobName) {
+		return hasKey(LOCK_JOB_RETRY_PREFIX+jobName);
 	}
 }

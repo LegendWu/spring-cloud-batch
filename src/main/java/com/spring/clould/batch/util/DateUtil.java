@@ -845,4 +845,15 @@ public class DateUtil{
 		return new Date(etime);
 	}
 	
+	
+	/**
+	 * 当前时间加指定秒钟
+	 * @param addMillis
+	 * @return
+	 */
+	public static Date currentAddSeconds(long seconds) {
+		long etime = System.currentTimeMillis()+seconds*1000;//延时函数，单位毫秒
+		return new Date(etime);
+	}
+	
 }

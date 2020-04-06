@@ -160,6 +160,26 @@ public class CronUtil {
     	return cropExp;
     }
     
+    /**
+     * 根据当前时间加指定分钟
+     * @param addMillis
+     * @return
+     */
+    @SuppressWarnings("deprecation")
+	public static String createCronByCurrentTimeAddSeconds(int seconds) {
+    	TaskSchedule taskSchedule = new TaskSchedule();
+    	Date nextRunTime = DateUtil.currentAddSeconds(seconds);
+    	taskSchedule.setJobType(1);//按每天
+    	Integer hour = nextRunTime.getHours(); //时
+    	Integer minute = nextRunTime.getMinutes(); //分
+    	Integer second = nextRunTime.getSeconds(); //秒
+    	taskSchedule.setHour(hour);
+    	taskSchedule.setMinute(minute);
+    	taskSchedule.setSecond(second);
+    	String cropExp = createCronExpression(taskSchedule);
+    	return cropExp;
+    }
+    
     //参考例子
 //    public static void main(String[] args) {
 //    	//执行时间：每天的12时12分12秒 start

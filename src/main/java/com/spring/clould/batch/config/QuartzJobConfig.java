@@ -110,6 +110,9 @@ public class QuartzJobConfig implements Job {
 				logger.error("批量执行异常", e);
 				job.convertStatus(BatchStatus.FAILED);
 				batchJobMapper.updateJobStatusOrInstanceId(job);
+			} finally {
+				//删除重试锁
+				redisLockUtil.deleleJobRetryLock(job.getJobName());
 			}
 		} else {
 			logger.warn("当前机器[{}]未获取到分布式锁，本次任务[{}]跳过执行！", IPUtil.getLocalIP(), job.getJobName());

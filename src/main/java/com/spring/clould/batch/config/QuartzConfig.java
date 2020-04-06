@@ -169,17 +169,17 @@ public class QuartzConfig {
 				addOrUpdateJob(job);
 				break;
 			case FAILED:
-				if(isAutoRetry(job) && redisLockUtil.hasJobLock(job.getJobName())) {
+				if(isAutoRetry(job) && !redisLockUtil.hasJobRetryLock(job.getJobName())) {
 					autoRetryWhenFailed(job);
 				}
 				break;
 			case STARTING:
-				if(isAutoRetry(job) && redisLockUtil.hasJobLock(job.getJobName())) {
+				if(isAutoRetry(job) && !redisLockUtil.hasJobRetryLock(job.getJobName())) {
 					autoRetryWhenStarting(job);
 				}
 				break;
 			case UNKNOWN:
-				if(isAutoRetry(job) && redisLockUtil.hasJobLock(job.getJobName())) {
+				if(isAutoRetry(job) && !redisLockUtil.hasJobRetryLock(job.getJobName())) {
 					autoRetryWhenUnknow(job);
 				}
 				break;
@@ -198,129 +198,6 @@ public class QuartzConfig {
 				scheduler.deleteJob(jobKey);
 			}
 		}
-	}
-
-	/**
-	 * 是否可重试
-	 * @param job
-	 * @return
-	 */
-	private boolean isAutoRetry(BatchJob job) {
-		return -1 == job.getMaxRetryTimes() || job.getRetryTimes() < job.getMaxRetryTimes();
-	}
-	
-	/**
-	 * 自动重试
-	 * @param job
-	 * @throws SchedulerException 
-	 */
-	private void autoRetryWhenStarting(BatchJob job) throws SchedulerException {
-		Scheduler scheduler = factory.getScheduler();
-		JobKey jobKey = getJobKey(job);
-		JobDataMap newMap = ConvertUtil.convertToJobDataMap(job);
-		JobDetail jobDetail = geJobDetail(jobKey, job.getDescription(), newMap);
-		//判断是否批量异常，如果是则删除分布式锁并且更新调度时间
-		JobParameters jobParameters = new JobParametersBuilder().addString(job.getJobInstanceId(), "datetime").toJobParameters();
-		JobExecution lastExecution = jobRepository.getLastJobExecution(job.getJobName(), jobParameters);
-		if(lastExecution != null) {
-			if(lastExecution.getStatus().equals(BatchStatus.STARTED) 
-					&& lastExecution.getExitStatus().equals(ExitStatus.UNKNOWN)) {
-				int startedCount = 0;
-				boolean noNeedUpdate = false;
-				StepExecution needUpdateExecution = null;
-				for (StepExecution execution : lastExecution.getStepExecutions()) {
-					if(execution.getStatus().equals(BatchStatus.STARTED)
-							&& execution.getExitStatus().equals(ExitStatus.EXECUTING)) {
-						startedCount++;
-						needUpdateExecution = execution;
-					}
-					Date endTime = execution.getEndTime();
-					//如果任一执行步骤的结束时间比当前时间小1分钟，则无需更新任务状态
-					if(null != endTime && System.currentTimeMillis()-endTime.getTime() < 1*60*1000) {
-						noNeedUpdate = true;
-					}
-				}
-				if(startedCount == 1 && null != needUpdateExecution && !noNeedUpdate) {
-					logger.warn("任务 [{}] 已经1分钟没有更新，系统判断为异常，尝试修改状态自动续跑.....", job.getJobName());
-					//更新step状态
-					batchJobMapper.updateStepExecutionFailed(needUpdateExecution.getId());
-					//更新job状态
-					batchJobMapper.updateJobExecutionFailed(lastExecution.getId());
-					//更新任务表（调度时间改为当前时间加一分钟）
-					job.setCron(CronUtil.createCronByCurrentTimeAddMillis(1));
-					job.setStatus(BatchJobStatusEnum.FAILED);
-					job.setRetryTimes(job.getRetryTimes()+1);
-					batchJobMapper.updateById(job);
-					//重新调度任务
-					scheduler.deleteJob(jobKey);
-					scheduler.scheduleJob(jobDetail, getTrigger(job));
-					logger.info("第{}次自动续跑，刷新调度任务-批量[{}]状态为[{}]，调度时间[{}]", job.getRetryTimes(), job.getJobName(), job.getStatus(), job.getCron());
-					//删除分布式锁
-					redisLockUtil.deleleJobLock(job.getJobName());
-					logger.info("第{}次自动续跑，删除任务[{}]分布式锁", job.getRetryTimes(), job.getJobName());
-				}
-			}
-		}
-	}
-	/**
-	 * 自动重试
-	 * @param job
-	 * @throws SchedulerException
-	 */
-	private void autoRetryWhenUnknow(BatchJob job) throws SchedulerException {
-		Scheduler scheduler = factory.getScheduler();
-		JobKey jobKey = getJobKey(job);
-		JobDataMap newMap = ConvertUtil.convertToJobDataMap(job);
-		JobDetail jobDetail = geJobDetail(jobKey, job.getDescription(), newMap);
-		JobParameters jobParameters = new JobParametersBuilder().addString(job.getJobInstanceId(), "datetime").toJobParameters();
-		JobExecution lastExecution = jobRepository.getLastJobExecution(job.getJobName(), jobParameters);
-		if(lastExecution != null) {
-			if(lastExecution.getStatus().equals(BatchStatus.UNKNOWN) 
-					&& lastExecution.getExitStatus().getExitCode().equals(ExitStatus.UNKNOWN.getExitCode())) {
-				int startedCount = 0;
-				boolean noNeedUpdate = false;
-				for (StepExecution execution : lastExecution.getStepExecutions()) {
-					if(execution.getStatus().equals(BatchStatus.STARTED) || execution.getStatus().equals(BatchStatus.STARTING)) {
-						startedCount++;
-					}
-					Date endTime = execution.getEndTime();
-					//如果任一执行步骤的结束时间比当前时间小1分钟，则无需更新任务状态
-					if(null != endTime && System.currentTimeMillis()-endTime.getTime() < 1*60*1000) {
-						noNeedUpdate = true;
-					}
-				}
-				if(startedCount == 0 && !noNeedUpdate) {
-					logger.warn("任务 [{}] 已经1分钟没有更新，系统判断为异常，尝试修改状态自动续跑.....", job.getJobName());
-					//更新任务表（调度时间改为当前时间加一分钟）
-					job.setCron(CronUtil.createCronByCurrentTimeAddMillis(1));
-					job.setStatus(BatchJobStatusEnum.FAILED);
-					job.setRetryTimes(job.getRetryTimes()+1);
-					batchJobMapper.updateById(job);
-					//更新job状态
-					batchJobMapper.updateJobExecutionFailed(lastExecution.getJobId());
-					//重新调度任务
-					scheduler.deleteJob(jobKey);
-					scheduler.scheduleJob(jobDetail, getTrigger(job));
-					logger.info("第{}次自动续跑，刷新调度任务-批量[{}]状态为[{}]，调度时间[{}]", job.getRetryTimes(), job.getJobName(), job.getStatus(), job.getCron());
-					//删除分布式锁
-					redisLockUtil.deleleJobLock(job.getJobName());
-					logger.info("第{}次自动续跑，删除任务[{}]分布式锁", job.getRetryTimes(), job.getJobName());
-				}
-			}
-		}
-	}
-	/**
-	 * 删除任务
-	 * @param job
-	 * @throws SchedulerException 
-	 */
-	private void deletJob(BatchJob job) throws SchedulerException {
-		Scheduler scheduler = factory.getScheduler();
-		JobKey jobKey = getJobKey(job);
-		scheduler.deleteJob(jobKey);
-		logger.info("删除调度任务-批量[{}]状态为[{}]", job.getJobName(), job.getStatus());
-		//删除分布式锁
-		redisLockUtil.deleleJobLock(job.getJobName());
 	}
 	
 	/**
@@ -349,7 +226,127 @@ public class QuartzConfig {
 	}
 	
 	/**
-	 * 失败时自动重试
+	 * 删除任务
+	 * @param job
+	 * @throws SchedulerException 
+	 */
+	private void deletJob(BatchJob job) throws SchedulerException {
+		Scheduler scheduler = factory.getScheduler();
+		JobKey jobKey = getJobKey(job);
+		if (scheduler.checkExists(jobKey)) {
+			scheduler.deleteJob(jobKey);
+			logger.info("删除调度任务-批量[{}]状态为[{}]", job.getJobName(), job.getStatus());
+			//删除分布式锁
+			redisLockUtil.deleleJobLock(job.getJobName());
+		}
+	}
+
+	/**
+	 * 自动重试-中断
+	 * @param job
+	 * @throws SchedulerException 
+	 */
+	private void autoRetryWhenStarting(BatchJob job) throws SchedulerException {
+		Scheduler scheduler = factory.getScheduler();
+		JobKey jobKey = getJobKey(job);
+		JobDataMap newMap = ConvertUtil.convertToJobDataMap(job);
+		JobDetail jobDetail = geJobDetail(jobKey, job.getDescription(), newMap);
+		//判断是否批量异常，如果是则删除分布式锁并且更新调度时间
+		JobParameters jobParameters = new JobParametersBuilder().addString(job.getJobInstanceId(), "datetime").toJobParameters();
+		JobExecution lastExecution = jobRepository.getLastJobExecution(job.getJobName(), jobParameters);
+		if(lastExecution != null) {
+			if(lastExecution.getStatus().equals(BatchStatus.STARTED) 
+					&& lastExecution.getExitStatus().equals(ExitStatus.UNKNOWN)) {
+				int startedCount = 0;
+				boolean noNeedUpdate = false;
+				StepExecution needUpdateExecution = null;
+				for (StepExecution execution : lastExecution.getStepExecutions()) {
+					if(execution.getStatus().equals(BatchStatus.STARTED)
+							&& execution.getExitStatus().equals(ExitStatus.EXECUTING)) {
+						startedCount++;
+						needUpdateExecution = execution;
+					}
+					Date endTime = execution.getEndTime();
+					if(null != endTime && System.currentTimeMillis()-endTime.getTime() < job.getRetryAfterFailed()*60*1000) {
+						noNeedUpdate = true;
+					}
+				}
+				if(startedCount == 1 && null != needUpdateExecution && !noNeedUpdate) {
+					logger.warn("任务 [{}] 已经{}分钟没有更新，系统判断为异常，尝试修改状态自动续跑.....", job.getJobName(), job.getRetryAfterFailed());
+					//添加重试锁
+					redisLockUtil.lockJobRetry(job.getJobName());
+					//更新step状态
+					batchJobMapper.updateStepExecutionFailed(needUpdateExecution.getId());
+					//更新job状态
+					batchJobMapper.updateJobExecutionFailed(lastExecution.getId());
+					//更新任务表（调度时间改为当前时间加一分钟）
+					job.setCron(CronUtil.createCronByCurrentTimeAddMillis(1));
+					job.setStatus(BatchJobStatusEnum.FAILED);
+					job.setRetryTimes(job.getRetryTimes()+1);
+					batchJobMapper.updateById(job);
+					//重新调度任务
+					scheduler.deleteJob(jobKey);
+					scheduler.scheduleJob(jobDetail, getTrigger(job));
+					logger.info("第{}次自动续跑，刷新调度任务-批量[{}]状态为[{}]，调度时间[{}]", job.getRetryTimes(), job.getJobName(), job.getStatus(), job.getCron());
+					//删除分布式锁
+					redisLockUtil.deleleJobLock(job.getJobName());
+					logger.info("第{}次自动续跑，删除任务[{}]分布式锁", job.getRetryTimes(), job.getJobName());
+				}
+			}
+		}
+	}
+	
+	/**
+	 * 自动重试-未知
+	 * @param job
+	 * @throws SchedulerException
+	 */
+	private void autoRetryWhenUnknow(BatchJob job) throws SchedulerException {
+		Scheduler scheduler = factory.getScheduler();
+		JobKey jobKey = getJobKey(job);
+		JobDataMap newMap = ConvertUtil.convertToJobDataMap(job);
+		JobDetail jobDetail = geJobDetail(jobKey, job.getDescription(), newMap);
+		JobParameters jobParameters = new JobParametersBuilder().addString(job.getJobInstanceId(), "datetime").toJobParameters();
+		JobExecution lastExecution = jobRepository.getLastJobExecution(job.getJobName(), jobParameters);
+		if(lastExecution != null) {
+			if(lastExecution.getStatus().equals(BatchStatus.UNKNOWN) 
+					&& lastExecution.getExitStatus().getExitCode().equals(ExitStatus.UNKNOWN.getExitCode())) {
+				int startedCount = 0;
+				boolean noNeedUpdate = false;
+				for (StepExecution execution : lastExecution.getStepExecutions()) {
+					if(execution.getStatus().equals(BatchStatus.STARTED) || execution.getStatus().equals(BatchStatus.STARTING)) {
+						startedCount++;
+					}
+					Date endTime = execution.getEndTime();
+					if(null != endTime && System.currentTimeMillis()-endTime.getTime() < job.getRetryAfterFailed()*60*1000) {
+						noNeedUpdate = true;
+					}
+				}
+				if(startedCount == 0 && !noNeedUpdate) {
+					logger.warn("任务 [{}] 已经{}分钟没有更新，系统判断为异常，尝试修改状态自动续跑.....", job.getJobName(), job.getRetryAfterFailed());
+					//添加重试锁
+					redisLockUtil.lockJobRetry(job.getJobName());
+					//更新任务表（调度时间改为当前时间加一分钟）
+					job.setCron(CronUtil.createCronByCurrentTimeAddMillis(1));
+					job.setStatus(BatchJobStatusEnum.FAILED);
+					job.setRetryTimes(job.getRetryTimes()+1);
+					batchJobMapper.updateById(job);
+					//更新job状态
+					batchJobMapper.updateJobExecutionFailed(lastExecution.getJobId());
+					//重新调度任务
+					scheduler.deleteJob(jobKey);
+					scheduler.scheduleJob(jobDetail, getTrigger(job));
+					logger.info("第{}次自动续跑，刷新调度任务-批量[{}]状态为[{}]，调度时间[{}]", job.getRetryTimes(), job.getJobName(), job.getStatus(), job.getCron());
+					//删除分布式锁
+					redisLockUtil.deleleJobLock(job.getJobName());
+					logger.info("第{}次自动续跑，删除任务[{}]分布式锁", job.getRetryTimes(), job.getJobName());
+				}
+			}
+		}
+	}
+	
+	/**
+	 * 自动重试-失败
 	 * @param job
 	 * @throws SchedulerException
 	 */
@@ -371,13 +368,14 @@ public class QuartzConfig {
 						startedCount++;
 					}
 					Date endTime = execution.getEndTime();
-					//如果任一执行步骤的结束时间比当前时间小1分钟，则无需更新任务状态
-					if(null != endTime && System.currentTimeMillis()-endTime.getTime() < 1*60*1000) {
+					if(null != endTime && System.currentTimeMillis()-endTime.getTime() < job.getRetryAfterFailed()*60*1000) {
 						noNeedUpdate = true;
 					}
 				}
 				if(startedCount == 0 && !noNeedUpdate) {
-					logger.warn("任务 [{}] 已经1分钟没有更新，系统判断为异常，尝试修改状态自动续跑.....", job.getJobName());
+					logger.warn("任务 [{}] 已经{}分钟没有更新，系统判断为异常，尝试修改状态自动续跑.....", job.getJobName(), job.getRetryAfterFailed());
+					//添加重试锁
+					redisLockUtil.lockJobRetry(job.getJobName());
 					//更新任务表（调度时间改为当前时间加一分钟）
 					job.setCron(CronUtil.createCronByCurrentTimeAddMillis(1));
 					job.setStatus(BatchJobStatusEnum.FAILED);
@@ -427,5 +425,14 @@ public class QuartzConfig {
 	 */
 	public JobKey getJobKey(BatchJob job) {
 		return JobKey.jobKey(job.getJobName(), job.getJobGroup());
+	}
+	
+	/**
+	 * 是否可重试
+	 * @param job
+	 * @return
+	 */
+	private boolean isAutoRetry(BatchJob job) {
+		return -1 == job.getMaxRetryTimes() || job.getRetryTimes() < job.getMaxRetryTimes();
 	}
 }
