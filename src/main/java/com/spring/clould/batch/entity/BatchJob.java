@@ -25,6 +25,8 @@ public class BatchJob extends Model<BatchJob> {
     private String jobInstanceId;
 
     private String cron;
+    
+    private String cronTemplate;
 
     private String description;
 
@@ -71,8 +73,16 @@ public class BatchJob extends Model<BatchJob> {
     public void setCron(String cron) {
         this.cron = cron == null ? null : cron.trim();
     }
+    
+    public String getCronTemplate() {
+		return cronTemplate;
+	}
 
-    public String getDescription() {
+	public void setCronTemplate(String cronTemplate) {
+		this.cronTemplate = cronTemplate;
+	}
+
+	public String getDescription() {
         return description;
     }
 

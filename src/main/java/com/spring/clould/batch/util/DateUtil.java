@@ -835,4 +835,14 @@ public class DateUtil{
 	        return c.getTime();
 	}
 	
+	/**
+	 * 当前时间加指定分钟
+	 * @param addMillis
+	 * @return
+	 */
+	public static Date currentAddMillis(long addMillis) {
+		long etime = System.currentTimeMillis()+addMillis*60*1000;//延时函数，单位毫秒
+		return new Date(etime);
+	}
+	
 }

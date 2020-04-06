@@ -13,7 +13,7 @@ import org.springframework.util.StringUtils;
 
 import com.alibaba.fastjson.JSONArray;
 import com.spring.clould.batch.entity.Cat;
-import com.spring.clould.batch.mapper.CatMapper;
+import com.spring.clould.batch.service.ICatService;
 
 /**
  * Description: 测试类
@@ -29,14 +29,19 @@ public class TestEntityStoreTasklet implements Tasklet {
 	private List<Cat> keyList;
 	
 	@Autowired
-	CatMapper catMapper;
+	ICatService catService;
 	
 	@Override
 	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
 		if(null == keyList) {
 			return RepeatStatus.FINISHED; 
 		}
+		for(Cat cat : keyList) {
+			cat.setIsEntityStore(cat.getIsEntityStore()+1);
+		}
+		catService.updateBatchById(keyList);
 		logger.info("entity store 任务执行中，当前分片fromId="+keyList.get(0).getId()+", toId="+keyList.get(keyList.size()-1).getId()+", keyList.size()="+keyList.size());
+		keyList = null;
 		return RepeatStatus.FINISHED;
 	}
 	

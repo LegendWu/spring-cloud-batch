@@ -23,7 +23,7 @@ public class RedisLockUtil {
 	public static final String LOCK_JOB_PREFIX = "LOCK_JOB_"; // 任务分布式锁
 	public static final String LOCK_JOB_REFRESH = "LOCK_JOB_REFRESH"; // 定时刷新任务分布式锁
 	public static final int LOCK_JOB_EXPIRE = 28800000; // 分布式锁失效时间8小时
-	public static final int LOCK_JOB_REFRESH_EXPIRE = 15000; // 分布式锁失效时间15S
+	public static final int LOCK_JOB_REFRESH_EXPIRE = 30000; // 分布式锁失效时间30S
 	
 	/**
 	 * 分布式锁

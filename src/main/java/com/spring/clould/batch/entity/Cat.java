@@ -19,6 +19,12 @@ public class Cat extends Model<Cat> {
     private String catage;
 
     private String cataddress;
+    
+    private int isKeyRange;
+    
+    private int isKeyStore;
+    
+    private int isEntityStore;
 
     public int getId() {
 		return id;
@@ -51,4 +57,29 @@ public class Cat extends Model<Cat> {
     public void setCataddress(String cataddress) {
         this.cataddress = cataddress;
     }
+
+	public int getIsKeyRange() {
+		return isKeyRange;
+	}
+
+	public void setIsKeyRange(int isKeyRange) {
+		this.isKeyRange = isKeyRange;
+	}
+
+	public int getIsKeyStore() {
+		return isKeyStore;
+	}
+
+	public void setIsKeyStore(int isKeyStore) {
+		this.isKeyStore = isKeyStore;
+	}
+
+	public int getIsEntityStore() {
+		return isEntityStore;
+	}
+
+	public void setIsEntityStore(int isEntityStore) {
+		this.isEntityStore = isEntityStore;
+	}
+    
 }

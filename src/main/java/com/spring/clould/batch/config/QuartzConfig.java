@@ -2,6 +2,7 @@ package com.spring.clould.batch.config;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -22,6 +23,13 @@ import org.quartz.spi.JobFactory;
 import org.quartz.spi.TriggerFiredBundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.ExitStatus;
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
@@ -35,8 +43,10 @@ import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.scheduling.quartz.SpringBeanJobFactory;
 
 import com.spring.clould.batch.entity.BatchJob;
+import com.spring.clould.batch.entity.enums.BatchJobStatusEnum;
 import com.spring.clould.batch.mapper.BatchJobMapper;
 import com.spring.clould.batch.util.ConvertUtil;
+import com.spring.clould.batch.util.CronUtil;
 import com.spring.clould.batch.util.RedisLockUtil;
 
 /**
@@ -59,6 +69,9 @@ public class QuartzConfig {
 	
 	@Autowired
 	RedisLockUtil redisLockUtil;
+	
+	@Autowired
+	JobRepository jobRepository;
 	
     //配置JobFactory
     @Bean
@@ -113,7 +126,7 @@ public class QuartzConfig {
 	 * 
 	 * @throws SchedulerException
 	 */
-	@Scheduled(fixedRate=10000)
+	@Scheduled(fixedRate=15000)
 	public void jobRefresh() throws SchedulerException {
 		boolean isLock = redisLockUtil.lockJobRefresh();
 		if(isLock) {
@@ -143,23 +156,146 @@ public class QuartzConfig {
 				if (scheduler.checkExists(jobKey)) {
 					JobDataMap lastMap = scheduler.getJobDetail(jobKey).getJobDataMap();
 					// 如果任务更新，则刷新调度任务
-					if (!newMap.get("cron").equals(lastMap.get("cron"))) {
+					if (!newMap.get("cron").equals(lastMap.get("cron"))
+							|| !newMap.get("status").toString().equals(lastMap.get("status").toString())) {
 						scheduler.deleteJob(jobKey);
 						scheduler.scheduleJob(jobDetail, getTrigger(job));
-						logger.info("刷新调度任务-批量[ {} ]状态为[ {} ]，原调度时间[ {} ]，当前调度时间[ {} ]", job.getJobName(), job.getStatus(), lastMap.get("cron"), newMap.get("cron"));
+						logger.info("刷新调度任务-批量[{}]状态为[{}]，原调度时间[{}]，当前调度时间[{}]", job.getJobName(), job.getStatus(), lastMap.get("cron"), newMap.get("cron"));
 					}
 				} else {
 					scheduler.scheduleJob(jobDetail, getTrigger(job));
-					logger.info("新增调度任务-批量[ {} ]状态为[ {} ]，调度时间[ {} ]", job.getJobName(), job.getStatus(), job.getCron());
+					logger.info("新增调度任务-批量[{}]状态为[{}]，调度时间[{}]", job.getJobName(), job.getStatus(), job.getCron());
+				}
+				//如果当前CRON和模板配置不一致则更新
+				if(!job.getCron().equals(job.getCronTemplate())) {
+					batchJobMapper.updateJobCronByTemplate(job);
+					scheduler.deleteJob(jobKey);
+					scheduler.scheduleJob(jobDetail, getTrigger(job));
+					logger.info("还原调度任务-批量[{}]状态为[{}]，模板调度时间[{}]，当前调度时间[{}]，更新后当前调度时间[{}]", job.getJobName(), job.getStatus(), job.getCronTemplate(), job.getCron(), job.getCronTemplate());
 				}
 				break;
 			case FAILED:
-			case STARTING:
-				if(!redisLockUtil.hasJobLock(job.getJobName())) {
-					scheduler.deleteJob(jobKey);
-					scheduler.scheduleJob(jobDetail, getTrigger(job));
-					logger.info("刷新调度任务-批量[ {} ]状态为[ {} ]，调度时间[ {} ]", job.getJobName(), job.getStatus(), job.getCron());
+				if(redisLockUtil.hasJobLock(job.getJobName())) {
+					//判断是否批量异常，如果是则删除分布式锁并且更新调度时间
+					JobParameters jobParameters = new JobParametersBuilder().addString(job.getJobInstanceId(), "datetime").toJobParameters();
+					JobExecution lastExecution = jobRepository.getLastJobExecution(job.getJobName(), jobParameters);
+					if(lastExecution != null) {
+						if(lastExecution.getStatus().equals(BatchStatus.FAILED) 
+								&& lastExecution.getExitStatus().getExitCode().equals(ExitStatus.FAILED.getExitCode())) {
+							int startedCount = 0;
+							boolean noNeedUpdate = false;
+							for (StepExecution execution : lastExecution.getStepExecutions()) {
+								if(execution.getStatus().equals(BatchStatus.STARTED) || execution.getStatus().equals(BatchStatus.STARTING)) {
+									startedCount++;
+								}
+								Date endTime = execution.getEndTime();
+								//如果任一执行步骤的结束时间比当前时间小1分钟，则无需更新任务状态
+								if(null != endTime && System.currentTimeMillis()-endTime.getTime() < 1*60*1000) {
+									noNeedUpdate = true;
+								}
+							}
+							if(startedCount == 0 && !noNeedUpdate) {
+								logger.warn("任务 [{}] 已经1分钟没有更新，系统判断为异常，尝试修改状态自动续跑.....", job.getJobName());
+								//更新任务表（调度时间改为当前时间加一分钟）
+								job.setCron(CronUtil.createCronByCurrentTimeAddMillis(1));
+								job.setStatus(BatchJobStatusEnum.FAILED);
+								batchJobMapper.updateById(job);
+								//重新调度任务
+								scheduler.deleteJob(jobKey);
+								scheduler.scheduleJob(jobDetail, getTrigger(job));
+								logger.info("自动续跑，刷新调度任务-批量[{}]状态为[{}]，调度时间[{}]", job.getJobName(), job.getStatus(), job.getCron());
+								//删除分布式锁
+								redisLockUtil.deleleJobLock(job.getJobName());
+								logger.info("自动续跑，删除任务[{}]分布式锁", job.getJobName());
+							}
+						}
+					}
 				}
+				break;
+			case STARTING:
+				if(redisLockUtil.hasJobLock(job.getJobName())) {
+					//判断是否批量异常，如果是则删除分布式锁并且更新调度时间
+					JobParameters jobParameters = new JobParametersBuilder().addString(job.getJobInstanceId(), "datetime").toJobParameters();
+					JobExecution lastExecution = jobRepository.getLastJobExecution(job.getJobName(), jobParameters);
+					if(lastExecution != null) {
+						if(lastExecution.getStatus().equals(BatchStatus.STARTED) 
+								&& lastExecution.getExitStatus().equals(ExitStatus.UNKNOWN)) {
+							int startedCount = 0;
+							boolean noNeedUpdate = false;
+							StepExecution needUpdateExecution = null;
+							for (StepExecution execution : lastExecution.getStepExecutions()) {
+								if(execution.getStatus().equals(BatchStatus.STARTED)
+										&& execution.getExitStatus().equals(ExitStatus.EXECUTING)) {
+									startedCount++;
+									needUpdateExecution = execution;
+								}
+								Date endTime = execution.getEndTime();
+								//如果任一执行步骤的结束时间比当前时间小1分钟，则无需更新任务状态
+								if(null != endTime && System.currentTimeMillis()-endTime.getTime() < 1*60*1000) {
+									noNeedUpdate = true;
+								}
+							}
+							if(startedCount == 1 && null != needUpdateExecution && !noNeedUpdate) {
+								logger.warn("任务 [{}] 已经1分钟没有更新，系统判断为异常，尝试修改状态自动续跑.....", job.getJobName());
+								//更新step状态
+								batchJobMapper.updateStepExecutionFailed(needUpdateExecution.getId());
+								//更新job状态
+								batchJobMapper.updateJobExecutionFailed(lastExecution.getId());
+								//更新任务表（调度时间改为当前时间加一分钟）
+								job.setCron(CronUtil.createCronByCurrentTimeAddMillis(1));
+								job.setStatus(BatchJobStatusEnum.FAILED);
+								batchJobMapper.updateById(job);
+								//重新调度任务
+								scheduler.deleteJob(jobKey);
+								scheduler.scheduleJob(jobDetail, getTrigger(job));
+								logger.info("自动续跑，刷新调度任务-批量[{}]状态为[{}]，调度时间[{}]", job.getJobName(), job.getStatus(), job.getCron());
+								//删除分布式锁
+								redisLockUtil.deleleJobLock(job.getJobName());
+								logger.info("自动续跑，删除任务[{}]分布式锁", job.getJobName());
+							}
+						}
+					}
+				}
+				break;
+			case UNKNOWN:
+//				if(!redisLockUtil.hasJobLock(job.getJobName())) {
+					//判断是否批量异常，如果是则删除分布式锁并且更新调度时间
+					JobParameters jobParameters = new JobParametersBuilder().addString(job.getJobInstanceId(), "datetime").toJobParameters();
+					JobExecution lastExecution = jobRepository.getLastJobExecution(job.getJobName(), jobParameters);
+					if(lastExecution != null) {
+						if(lastExecution.getStatus().equals(BatchStatus.UNKNOWN) 
+								&& lastExecution.getExitStatus().getExitCode().equals(ExitStatus.UNKNOWN.getExitCode())) {
+							int startedCount = 0;
+							boolean noNeedUpdate = false;
+							for (StepExecution execution : lastExecution.getStepExecutions()) {
+								if(execution.getStatus().equals(BatchStatus.STARTED) || execution.getStatus().equals(BatchStatus.STARTING)) {
+									startedCount++;
+								}
+								Date endTime = execution.getEndTime();
+								//如果任一执行步骤的结束时间比当前时间小1分钟，则无需更新任务状态
+								if(null != endTime && System.currentTimeMillis()-endTime.getTime() < 1*60*1000) {
+									noNeedUpdate = true;
+								}
+							}
+							if(startedCount == 0 && !noNeedUpdate) {
+								logger.warn("任务 [{}] 已经1分钟没有更新，系统判断为异常，尝试修改状态自动续跑.....", job.getJobName());
+								//更新任务表（调度时间改为当前时间加一分钟）
+								job.setCron(CronUtil.createCronByCurrentTimeAddMillis(1));
+								job.setStatus(BatchJobStatusEnum.FAILED);
+								batchJobMapper.updateById(job);
+								//更新job状态
+								batchJobMapper.updateJobExecutionFailed(lastExecution.getJobId());
+								//重新调度任务
+								scheduler.deleteJob(jobKey);
+								scheduler.scheduleJob(jobDetail, getTrigger(job));
+								logger.info("自动续跑，刷新调度任务-批量[{}]状态为[{}]，调度时间[{}]", job.getJobName(), job.getStatus(), job.getCron());
+								//删除分布式锁
+								redisLockUtil.deleleJobLock(job.getJobName());
+								logger.info("自动续跑，删除任务[{}]分布式锁", job.getJobName());
+							}
+						}
+					}
+//				}
 				break;
 			case STOPPING:
 			case STOPPED:
@@ -167,7 +303,7 @@ public class QuartzConfig {
 			default:
 				if (scheduler.checkExists(jobKey)) {
 					scheduler.deleteJob(jobKey);
-					logger.info("删除调度任务-批量[ {} ]状态为[ {} ]", job.getJobName(), job.getStatus());
+					logger.info("删除调度任务-批量[{}]状态为[{}]", job.getJobName(), job.getStatus());
 				}
 				break;
 			}

@@ -10,16 +10,13 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.JobParametersInvalidException;
-import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
 import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
-import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,9 +55,6 @@ public class QuartzJobConfig implements Job {
 	@Autowired
 	RedisLockUtil redisLockUtil;
 	
-	@Autowired
-	JobRepository jobRepository;
-
 	@Override
 	public void execute(JobExecutionContext executorContext) throws JobExecutionException {
 		JobDataMap jobDataMap = executorContext.getMergedJobDataMap();
@@ -73,32 +67,22 @@ public class QuartzJobConfig implements Job {
 			//设置任务执行参数
 			JobParameters jobParameters = null;
 			String jobInstanceId = job.getJobInstanceId();
-			if (BatchJobStatusEnum.FAILED.equals(job.getStatus()) || BatchJobStatusEnum.STARTING.equals(job.getStatus())) {
+			//如果任务状态为失败或者正在执行则获取上次执行的实例ID作为参数进行续跑
+			if (BatchJobStatusEnum.FAILED.equals(job.getStatus()) 
+					|| BatchJobStatusEnum.STARTING.equals(job.getStatus())
+					 || BatchJobStatusEnum.UNKNOWN.equals(job.getStatus())) {
 				jobParameters = new JobParametersBuilder().addString(jobInstanceId, "datetime").toJobParameters();
-				JobExecution lastExecution = jobRepository.getLastJobExecution(job.getJobName(), jobParameters);
-				if(lastExecution != null) {
-					for (StepExecution execution : lastExecution.getStepExecutions()) {
-						BatchStatus status = execution.getStatus();
-						if (status.isRunning()) {
-							execution.setStatus(BatchStatus.FAILED);
-							execution.setExitStatus(ExitStatus.FAILED);
-							execution.setEndTime(new Date());
-							jobRepository.update(execution);
-						}
-					}
-					lastExecution.setStatus(BatchStatus.FAILED);
-					lastExecution.setExitStatus(ExitStatus.FAILED);
-					lastExecution.setEndTime(new Date());
-					jobRepository.update(lastExecution);
-				}
+				logger.info("当前机器[{}]获取到分布式锁，开始续跑任务[{}]", IPUtil.getLocalIP(), job.getJobName());
 			} else {
 				if(YesOrNoEnum.YES.equals(job.getIsMultiRun())) {
+					//当天可以多次执行
 					jobInstanceId = DateUtil.parseDateToStr(new Date(), DateUtil.DATE_TIME_FORMAT_YYYYMMDDHHMISSSSS);
 				}else {
+					//当天只允许执行一次
 					jobInstanceId = DateUtil.parseDateToStr(new Date(), DateUtil.DATE_FORMAT_YYYYMMDD);
 				}
 				jobParameters = new JobParametersBuilder().addString(jobInstanceId, "datetime").toJobParameters();
-				logger.info("当前机器[ {} ]获取到分布式锁，开始执行任务[ {} ]", IPUtil.getLocalIP(), job.getJobName());
+				logger.info("当前机器[{}]获取到分布式锁，开始执行任务[{}]", IPUtil.getLocalIP(), job.getJobName());
 			}
 			//更新job实例ID及状态
 			job.setJobInstanceId(jobInstanceId);
@@ -107,24 +91,28 @@ public class QuartzJobConfig implements Job {
 			try {
 				//执行批量任务
 				JobExecution result = jobLauncher.run((org.springframework.batch.core.Job) BeanUtil.getContext().getBean(job.getJobName()), jobParameters);
-				logger.info("任务[ {} ]状态[ {} ]", job.getJobName(), null == result? "FAILED-NULL" : result.getStatus());
+				logger.info("任务[{}]状态[{}]", job.getJobName(), null == result? "FAILED-NULL" : result.getStatus());
 				if(null != result) {
 					//更新任务状态
 					job.convertStatus(result.getStatus());
 					batchJobMapper.updateJobStatusOrInstanceId(job);
+					//任务成功结束删除分布式锁
+					if(result.getStatus().equals(BatchStatus.COMPLETED)) {
+						logger.info("删除任务[{}]分布式锁", job.getJobName());
+						redisLockUtil.deleleJobLock(job.getJobName());
+					}
 				}
 			} catch (JobInstanceAlreadyCompleteException e) {
-				logger.warn("任务[ {} ]当天已经执行完成，禁止重复执行，执行日期：[ {} ]", job.getJobName(), jobInstanceId);
+				logger.warn("任务[{}]当天已经执行完成，禁止重复执行，执行实例：[{}]", job.getJobName(), jobInstanceId);
+				logger.info("删除任务[{}]分布式锁", job.getJobName());
+				redisLockUtil.deleleJobLock(job.getJobName());
 			} catch (BeansException | JobExecutionAlreadyRunningException | JobRestartException | JobParametersInvalidException e) {
 				logger.error("批量执行异常", e);
 				job.convertStatus(BatchStatus.FAILED);
 				batchJobMapper.updateJobStatusOrInstanceId(job);
-			} finally {
-				logger.info("删除任务[ {} ]分布式锁", job.getJobName());
-				redisLockUtil.deleleJobLock(job.getJobName());
 			}
 		} else {
-			logger.warn("当前机器[ {} ]未获取到分布式锁，本次任务[ {} ]跳过执行！", IPUtil.getLocalIP(), job.getJobName());
+			logger.warn("当前机器[{}]未获取到分布式锁，本次任务[{}]跳过执行！", IPUtil.getLocalIP(), job.getJobName());
 		}
 	}
 }
