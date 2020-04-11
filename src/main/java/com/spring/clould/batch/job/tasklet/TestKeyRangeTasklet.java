@@ -1,6 +1,5 @@
 package com.spring.clould.batch.job.tasklet;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 
 import com.alibaba.fastjson.JSONArray;
-import com.spring.clould.batch.entity.BatchJobConfig;
 import com.spring.clould.batch.entity.Cat;
 import com.spring.clould.batch.mapper.BatchJobConfigMapper;
 import com.spring.clould.batch.mapper.CatMapper;
@@ -53,22 +51,6 @@ public class TestKeyRangeTasklet implements Tasklet {
 		}
 		catService.updateBatchById(cats);
 		logger.info("key range 任务执行中，当前分片fromId="+keyMap.get("fromId")+", toId="+keyMap.get("toId")+", size="+cats.size());
-		
-		//测试异常
-		Map<String, Object> param1 = new HashMap<String, Object>();
-		param1.put("confCode", "TEST_ERROR_SWITCH");
-		BatchJobConfig value = batchJobConfigMapper.selectConfigByCode(param1);
-		if(value.getConfValue().equals("Y")) {
-			Map<String, Object> param2 = new HashMap<String, Object>();
-			param2.put("confCode", "TEST_ERROR_DATA");
-			BatchJobConfig value2 = batchJobConfigMapper.selectConfigByCode(param2);
-			String[] ids = value2.getConfValue().split(",");
-			for(String id : ids) {
-				if((Integer)keyMap.get("fromId") == Integer.parseInt(id)) {
-					throw new RuntimeException("测试异常");
-				}
-			}
-		}
 		
 		keyMap = null;
 		cats = null;

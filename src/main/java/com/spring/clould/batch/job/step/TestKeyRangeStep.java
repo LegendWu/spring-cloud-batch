@@ -1,11 +1,16 @@
 package com.spring.clould.batch.job.step;
 
+import org.apache.activemq.ActiveMQConnectionFactory;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.dsl.IntegrationFlow;
+import org.springframework.integration.dsl.IntegrationFlows;
+import org.springframework.integration.jms.dsl.Jms;
 
 import com.spring.clould.batch.job.partitioner.KeyRangePartitioner;
 import com.spring.clould.batch.job.step.base.BaseRemoteStep;
@@ -20,6 +25,40 @@ import com.spring.clould.batch.job.tasklet.TestKeyRangeTasklet;
  */
 @Configuration
 public class TestKeyRangeStep extends BaseRemoteStep{
+	
+	@Bean
+	public DirectChannel masterB() {
+		return new DirectChannel();
+	}
+	
+	@Bean
+	public DirectChannel workerB() {
+		return new DirectChannel();
+	}
+
+	@Bean
+	public IntegrationFlow outboundFlowB(ActiveMQConnectionFactory connectionFactory) {
+		return IntegrationFlows.from(masterB())
+				.handle(Jms.outboundAdapter(connectionFactory).destination("masterB")).get();
+	}
+	
+	@Bean
+	public IntegrationFlow inboundFlowB(ActiveMQConnectionFactory connectionFactory) {
+		return IntegrationFlows.from(Jms.messageDrivenChannelAdapter(connectionFactory).destination("masterB"))
+				.channel(masterB()).get();
+	}
+	
+	@Bean
+	public IntegrationFlow outboundFlowB1(ActiveMQConnectionFactory connectionFactory) {
+		return IntegrationFlows.from(workerB())
+				.handle(Jms.outboundAdapter(connectionFactory).destination("workerB")).get();
+	}
+	
+	@Bean
+	public IntegrationFlow inboundFlowB1(ActiveMQConnectionFactory connectionFactory) {
+		return IntegrationFlows.from(Jms.messageDrivenChannelAdapter(connectionFactory).destination("workerB"))
+				.channel(workerB()).get();
+	}
 
 	@Bean
 	public Step testKeyRangeMasterStep() {
@@ -27,7 +66,8 @@ public class TestKeyRangeStep extends BaseRemoteStep{
 				.get("testKeyRangeMasterStep")
 				.partitioner("testKeyRangeWorkerStep", new KeyRangePartitioner<Integer>(sqlSessionFactory, "com.spring.clould.batch.mapper.CatMapper.loadKeys", null))
 				.gridSize(DEFAULT_GRID_SIZE)
-				.outputChannel(masterRequests())
+				.outputChannel(masterB())
+				.inputChannel(workerB())
 				.listener(stepListener)
 				.build();
 	}
@@ -36,7 +76,8 @@ public class TestKeyRangeStep extends BaseRemoteStep{
 	public Step testKeyRangeWorkerStep() {
 		return this.workerStepBuilderFactory
 				.get("testKeyRangeWorkerStep")
-				.inputChannel(workerRequests())
+				.inputChannel(masterB())
+				.outputChannel(workerB())
 				.tasklet(testKeyRangeTasklet(null))
 				.build();
 	}
