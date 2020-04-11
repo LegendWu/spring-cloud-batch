@@ -10,8 +10,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.spring.clould.batch.job.listener.CommonJobListener;
-import com.spring.clould.batch.job.step.TestKeyRangeStep;
-import com.spring.clould.batch.util.BeanUtil;
 
 /**
  * Description: 远程分片任务配置
