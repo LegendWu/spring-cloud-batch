@@ -6,6 +6,9 @@ spring:
    batch:
       job:
          enabled: false # 禁止应用启动时执行批量
+         step:
+            gridSize: 10000
+            chunk: 1000
    messages:
       basename: i18n/Messages,i18n/Pages
    datasource:
@@ -58,3 +61,10 @@ mybatis-plus:
    configuration:
       map-underscore-to-camel-case: true
       cache-enabled: false
+#线程池配置
+thread:
+   pool:
+      corePoolSize: 10
+      maxPoolSize: 20
+      queueCapacity: 100
+      keepAliveSeconds: 30000

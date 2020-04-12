@@ -1,5 +1,6 @@
 package com.spring.clould.batch.util;
 
+import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -44,4 +45,21 @@ public class StepBeanUtil implements ApplicationContextAware{
 	public Step getMasterStep(Class<?> clz) {
 		return (Step) applicationContext.getBean(ClassUtils.getShortName(clz)+".masterStep");
 	}
+	
+	public static String getMasterStepName(Class<?> clz) {
+		return ClassUtils.getShortName(clz)+".masterStep";
+	}
+	
+	public static String getWorkerStepName(Class<?> clz) {
+		return ClassUtils.getShortName(clz)+".workerStep";
+	}
+	
+	public Job getJob(Class<?> clz) {
+		return (Job) applicationContext.getBean(ClassUtils.getShortName(clz)+".job");
+	}
+	
+	public static String getJobName(Class<?> clz) {
+		return ClassUtils.getShortName(clz)+".job";
+	}
+	
 }

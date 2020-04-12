@@ -16,14 +16,15 @@ import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.spring.clould.batch.config.RedisConfig;
+import com.spring.clould.batch.job.step.TestKeyStoreStep;
 import com.spring.clould.batch.util.DateUtil;
 import com.spring.clould.batch.util.RedisLockUtil;
+import com.spring.clould.batch.util.StepBeanUtil;
 
 /**
  * Description: 测试启动类
@@ -47,7 +48,7 @@ public class BatchAppTests {
 	JobLauncher jobLauncher;
 	
 	@Autowired
-	ApplicationContext context;
+	StepBeanUtil stepBeanUtil;
 	
 	@Test
 	public void deleteRedisLock() {
@@ -56,11 +57,11 @@ public class BatchAppTests {
 	
 	@Test
 	public void runJob() throws SchedulerException, BeansException, JobExecutionAlreadyRunningException, JobRestartException, JobInstanceAlreadyCompleteException, JobParametersInvalidException {
-		String jobName="testKeyStoreJob";
+		String jobName=StepBeanUtil.getMasterStepName(TestKeyStoreStep.class);
 		redisLockUtil.deleleJobLock(jobName);
 		String jobInstanceId = DateUtil.parseDateToStr(new Date(), DateUtil.DATE_TIME_FORMAT_YYYYMMDDHHMISSSSS);
 		JobParameters jobParameters = new JobParametersBuilder().addString(jobInstanceId, "datetime").toJobParameters();
-		JobExecution result = jobLauncher.run((org.springframework.batch.core.Job) context.getBean(jobName), jobParameters);
+		JobExecution result = jobLauncher.run(stepBeanUtil.getJob(TestKeyStoreStep.class), jobParameters);
 		System.out.println(result.getStatus());
 	}
 

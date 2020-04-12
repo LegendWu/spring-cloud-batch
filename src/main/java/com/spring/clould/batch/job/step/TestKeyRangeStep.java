@@ -1,19 +1,16 @@
 package com.spring.clould.batch.job.step;
 
-import org.apache.activemq.ActiveMQConnectionFactory;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.jms.dsl.Jms;
 
-import com.spring.clould.batch.job.common.partitioner.KeyRangePartitioner;
 import com.spring.clould.batch.job.common.step.BaseRemoteStep;
 import com.spring.clould.batch.job.tasklet.TestKeyRangeTasklet;
 
@@ -25,75 +22,57 @@ import com.spring.clould.batch.job.tasklet.TestKeyRangeTasklet;
  * @version 1.0
  */
 @Configuration
-public class TestKeyRangeStep extends BaseRemoteStep{
-	
-	@Bean
-	public DirectChannel masterB() {
+@ConfigurationProperties(prefix = "spring.batch.job.step")
+public class TestKeyRangeStep extends BaseRemoteStep<Integer>{
+
+	@Bean("TestKeyRangeStep.masterChannel")
+	public DirectChannel masterChannel() {
 		return new DirectChannel();
 	}
 	
-	@Bean
-	public DirectChannel workerB() {
+	@Bean("TestKeyRangeStep.workerChannel")
+	public DirectChannel workerChannel() {
 		return new DirectChannel();
 	}
-
-	@Bean
-	public IntegrationFlow outboundFlowB(ActiveMQConnectionFactory connectionFactory) {
-		return IntegrationFlows.from(masterB())
-				.handle(Jms.outboundAdapter(connectionFactory).destination("masterB")).get();
+	
+	@Bean("TestKeyRangeStep.outboundFlowMaster")
+	public IntegrationFlow outboundFlowMaster() {
+		return getMasterOutboundFlow();
 	}
 	
-	@Bean
-	public IntegrationFlow inboundFlowB(ActiveMQConnectionFactory connectionFactory) {
-		return IntegrationFlows.from(Jms.messageDrivenChannelAdapter(connectionFactory).destination("masterB"))
-				.channel(masterB()).get();
+	@Bean("TestKeyRangeStep.inboundFlowMaster")
+	public IntegrationFlow inboundFlowMaster() {
+		return getMasterInboundFlow();
 	}
 	
-	@Bean
-	public IntegrationFlow outboundFlowB1(ActiveMQConnectionFactory connectionFactory) {
-		return IntegrationFlows.from(workerB())
-				.handle(Jms.outboundAdapter(connectionFactory).destination("workerB")).get();
+	@Bean("TestKeyRangeStep.outboundFlowWorker")
+	public IntegrationFlow outboundFlowWorker() {
+		return getWorkerOutboundFlow();
 	}
 	
-	@Bean
-	public IntegrationFlow inboundFlowB1(ActiveMQConnectionFactory connectionFactory) {
-		return IntegrationFlows.from(Jms.messageDrivenChannelAdapter(connectionFactory).destination("workerB"))
-				.channel(workerB()).get();
+	@Bean("TestKeyRangeStep.inboundFlowWorker")
+	public IntegrationFlow inboundFlowWorker() {
+		return getWorkerInboundFlow();
+	}
+	
+	@Bean("TestKeyRangeStep.masterStep")
+	public Step masterStep() {
+		return getKeyRangeMasterStep("com.spring.clould.batch.mapper.CatMapper.loadKeys", null);
 	}
 
-	@Bean
-	public Step testKeyRangeMasterStep() {
-		return this.managerStepBuilderFactory
-				.get("testKeyRangeMasterStep")
-				.partitioner("testKeyRangeWorkerStep", new KeyRangePartitioner<Integer>(sqlSessionFactory, "com.spring.clould.batch.mapper.CatMapper.loadKeys", null))
-				.gridSize(DEFAULT_GRID_SIZE)
-				.outputChannel(masterB())
-				.inputChannel(workerB())
-				.listener(stepListener)
-				.build();
+	@Bean("TestKeyRangeStep.workerStep")
+	public Step workerStep() {
+		return getTaskletWorkerStep(tasklet(null));
 	}
 
-	@Bean
-	public Step testKeyRangeWorkerStep() {
-		return this.workerStepBuilderFactory
-				.get("testKeyRangeWorkerStep")
-				.inputChannel(masterB())
-				.outputChannel(workerB())
-				.tasklet(testKeyRangeTasklet(null))
-				.build();
-	}
-
-	@Bean
 	@StepScope
-	public Tasklet testKeyRangeTasklet(@Value("#{stepExecutionContext[keyMap]}") final String keyMap) {
+	@Bean("TestKeyRangeStep.tasklet")
+	public Tasklet tasklet(@Value("#{stepExecutionContext[keyMap]}") final String keyMap) {
 		return new TestKeyRangeTasklet(keyMap);
 	}
 	
-	@Bean
-    public Job testKeyRangeJob() {
-         return jobBuilderFactory.get("testKeyRangeJob")
-                 .start(testKeyRangeMasterStep())
-                 .listener(jobListener)
-                 .build();
+	@Bean("TestKeyRangeStep.job")
+    public Job job() {
+         return getJob();
 	}
 }

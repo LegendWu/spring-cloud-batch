@@ -17,6 +17,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 
+import com.spring.clould.batch.job.step.TestEntityStoreStep;
+import com.spring.clould.batch.job.step.TestKeyRangeStep;
+import com.spring.clould.batch.job.step.TestKeyStoreStep;
+import com.spring.clould.batch.util.StepBeanUtil;
+
 /**
  * Description: 拆分并行任务配置
  * Copyright: Copyright (c) 2020
@@ -36,13 +41,7 @@ public class SplitJobConfig {
     private StepBuilderFactory stepBuilderFactory;
     
     @Autowired
-	Step testKeyRangeMasterStep;
-	
-	@Autowired
-	Step testKeyStoreMasterStep;
-	
-	@Autowired
-	Step testEntityStoreMasterStep;
+    StepBeanUtil stepBeanUtil;
 
     /**
               * 创建job运行Flow,我们利用split(new
@@ -66,8 +65,8 @@ public class SplitJobConfig {
     @Bean
     public Flow jobSpiltFlow1() {
         return new FlowBuilder<Flow>("jobSpiltFlow1")
-                .start(testKeyRangeMasterStep)
-                .next(testKeyStoreMasterStep)
+                .start(stepBeanUtil.getMasterStep(TestKeyRangeStep.class))
+                .next(stepBeanUtil.getMasterStep(TestKeyStoreStep.class))
                 .build();
 
     }
@@ -76,7 +75,7 @@ public class SplitJobConfig {
     @Bean
     public Flow jobSpiltFlow2() {
         return new FlowBuilder<Flow>("jobSpiltFlow2")
-                .start(testEntityStoreMasterStep)
+                .start(stepBeanUtil.getMasterStep(TestEntityStoreStep.class))
                 .build();
 
     }

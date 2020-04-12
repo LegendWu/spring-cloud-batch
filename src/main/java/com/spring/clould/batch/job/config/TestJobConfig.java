@@ -1,7 +1,6 @@
 package com.spring.clould.batch.job.config;
 
 import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.integration.config.annotation.EnableBatchIntegration;
@@ -10,6 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.spring.clould.batch.job.common.listener.CommonJobListener;
+import com.spring.clould.batch.job.step.TestKeyStoreStep;
+import com.spring.clould.batch.util.StepBeanUtil;
 
 /**
  * Description: 远程分片任务配置
@@ -30,12 +31,12 @@ public class TestJobConfig {
 	CommonJobListener listener;
 	
 	@Autowired
-	Step testKeyStoreMasterStep;
+	StepBeanUtil stepBeanUtil;
 	
 	@Bean
     public Job testJob() {
          return jobBuilderFactory.get("testJob")
-                 .start(testKeyStoreMasterStep)
+                 .start(stepBeanUtil.getMasterStep(TestKeyStoreStep.class))
                  .listener(listener)
                  .build();
     }

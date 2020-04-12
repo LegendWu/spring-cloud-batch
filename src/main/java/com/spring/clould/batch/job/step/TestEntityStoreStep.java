@@ -1,20 +1,17 @@
 package com.spring.clould.batch.job.step;
 
-import org.apache.activemq.ActiveMQConnectionFactory;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.jms.dsl.Jms;
 
 import com.spring.clould.batch.entity.Cat;
-import com.spring.clould.batch.job.common.partitioner.KeyStorePartitioner;
 import com.spring.clould.batch.job.common.step.BaseRemoteStep;
 import com.spring.clould.batch.job.tasklet.TestEntityStoreTasklet;
 
@@ -26,75 +23,57 @@ import com.spring.clould.batch.job.tasklet.TestEntityStoreTasklet;
  * @version 1.0
  */
 @Configuration
-public class TestEntityStoreStep extends BaseRemoteStep{
+@ConfigurationProperties(prefix = "spring.batch.job.step")
+public class TestEntityStoreStep extends BaseRemoteStep<Cat>{
 	
-	@Bean
-	public DirectChannel masterA() {
+	@Bean("TestEntityStoreStep.masterChannel")
+	public DirectChannel masterChannel() {
 		return new DirectChannel();
 	}
 	
-	@Bean
-	public DirectChannel workerA() {
+	@Bean("TestEntityStoreStep.workerChannel")
+	public DirectChannel workerChannel() {
 		return new DirectChannel();
 	}
 
-	@Bean
-	public IntegrationFlow outboundFlowA(ActiveMQConnectionFactory connectionFactory) {
-		return IntegrationFlows.from(masterA())
-				.handle(Jms.outboundAdapter(connectionFactory).destination("masterA")).get();
+	@Bean("TestEntityStoreStep.outboundFlowMaster")
+	public IntegrationFlow outboundFlowMaster() {
+		return getMasterOutboundFlow();
 	}
 	
-	@Bean
-	public IntegrationFlow inboundFlowA(ActiveMQConnectionFactory connectionFactory) {
-		return IntegrationFlows.from(Jms.messageDrivenChannelAdapter(connectionFactory).destination("masterA"))
-				.channel(masterA()).get();
+	@Bean("TestEntityStoreStep.inboundFlowMaster")
+	public IntegrationFlow inboundFlowMaster() {
+		return getMasterInboundFlow();
 	}
 	
-	@Bean
-	public IntegrationFlow outboundFlowA1(ActiveMQConnectionFactory connectionFactory) {
-		return IntegrationFlows.from(workerA())
-				.handle(Jms.outboundAdapter(connectionFactory).destination("workerA")).get();
+	@Bean("TestEntityStoreStep.outboundFlowWorker")
+	public IntegrationFlow outboundFlowWorker() {
+		return getWorkerOutboundFlow();
 	}
 	
-	@Bean
-	public IntegrationFlow inboundFlowA1(ActiveMQConnectionFactory connectionFactory) {
-		return IntegrationFlows.from(Jms.messageDrivenChannelAdapter(connectionFactory).destination("workerA"))
-				.channel(workerA()).get();
+	@Bean("TestEntityStoreStep.inboundFlowWorker")
+	public IntegrationFlow inboundFlowWorker() {
+		return getWorkerInboundFlow();
 	}
 	
-	@Bean
-	public Step testEntityStoreMasterStep() {
-		return this.managerStepBuilderFactory
-				.get("testEntityStoreMasterStep")
-				.partitioner("testEntityStoreWorkerStep", new KeyStorePartitioner<Cat>(sqlSessionFactory, "com.spring.clould.batch.mapper.CatMapper.loadAllCats", null))
-				.gridSize(DEFAULT_GRID_SIZE)
-				.outputChannel(masterA())
-				.inputChannel(workerA())
-				.listener(stepListener)
-				.build();
+	@Bean("TestEntityStoreStep.masterStep")
+	public Step masterStep() {
+		return getKeyStoreMasterStep("com.spring.clould.batch.mapper.CatMapper.loadAllCats", null);
 	}
 
-	@Bean
-	public Step testEntityStoreWorkerStep() {
-		return this.workerStepBuilderFactory
-				.get("testEntityStoreWorkerStep")
-				.inputChannel(masterA())
-				.outputChannel(workerA())
-				.tasklet(testEntityStoreTasklet(null))
-				.build();
+	@Bean("TestEntityStoreStep.workerStep")
+	public Step workerStep() {
+		return getTaskletWorkerStep(tasklet(null));
 	}
 
-	@Bean
 	@StepScope
-	public Tasklet testEntityStoreTasklet(@Value("#{stepExecutionContext[keyList]}") final String keyList) {
+	@Bean("TestEntityStoreStep.tasklet")
+	public Tasklet tasklet(@Value("#{stepExecutionContext[keyList]}") final String keyList) {
 		return new TestEntityStoreTasklet(keyList);
 	}
 	
-	@Bean
-    public Job testEntityStoreJob() {
-         return jobBuilderFactory.get("testEntityStoreJob")
-                 .start(testEntityStoreMasterStep())
-                 .listener(jobListener)
-                 .build();
+	@Bean("TestEntityStoreStep.job")
+    public Job job() {
+         return getJob();
 	}
 }
