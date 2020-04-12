@@ -1,4 +1,4 @@
-package com.spring.clould.batch.job.listener;
+package com.spring.clould.batch.job.common.listener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

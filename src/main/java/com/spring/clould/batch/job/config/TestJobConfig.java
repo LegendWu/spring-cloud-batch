@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.spring.clould.batch.job.listener.CommonJobListener;
+import com.spring.clould.batch.job.common.listener.CommonJobListener;
 
 /**
  * Description: 远程分片任务配置
@@ -30,20 +30,12 @@ public class TestJobConfig {
 	CommonJobListener listener;
 	
 	@Autowired
-	Step testKeyRangeMasterStep;
-	
-	@Autowired
 	Step testKeyStoreMasterStep;
-	
-	@Autowired
-	Step testEntityStoreMasterStep;
 	
 	@Bean
     public Job testJob() {
          return jobBuilderFactory.get("testJob")
-                 .start(testKeyRangeMasterStep)
-                 .next(testKeyStoreMasterStep)
-                 .next(testEntityStoreMasterStep)
+                 .start(testKeyStoreMasterStep)
                  .listener(listener)
                  .build();
     }

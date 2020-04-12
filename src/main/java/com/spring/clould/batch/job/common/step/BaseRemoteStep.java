@@ -1,12 +1,13 @@
-package com.spring.clould.batch.job.step.base;
+package com.spring.clould.batch.job.common.step;
 
 import org.apache.ibatis.session.SqlSessionFactory;
+import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.integration.partition.RemotePartitioningMasterStepBuilderFactory;
 import org.springframework.batch.integration.partition.RemotePartitioningWorkerStepBuilderFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.spring.clould.batch.job.listener.CommonStepListener;
-import com.spring.clould.batch.util.StepBeanUtil;
+import com.spring.clould.batch.job.common.listener.CommonJobListener;
+import com.spring.clould.batch.job.common.listener.CommonStepListener;
 
 /**
  * Description: 基础远程步骤
@@ -17,7 +18,7 @@ import com.spring.clould.batch.util.StepBeanUtil;
  */
 public class BaseRemoteStep {
 
-	protected static final int DEFAULT_GRID_SIZE = 1000;
+	protected static final int DEFAULT_GRID_SIZE = 10000;
 
 	@Autowired
 	protected SqlSessionFactory sqlSessionFactory;
@@ -32,6 +33,9 @@ public class BaseRemoteStep {
 	protected CommonStepListener stepListener;
 	
 	@Autowired
-	protected StepBeanUtil beanUtil;
+	protected CommonJobListener jobListener;
+	
+	@Autowired
+	protected JobBuilderFactory jobBuilderFactory;
 	
 }

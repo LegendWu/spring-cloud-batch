@@ -1,4 +1,4 @@
-package com.spring.clould.batch.job.partitioner;
+package com.spring.clould.batch.job.common.partitioner;
 
 import java.util.List;
 import java.util.Map;

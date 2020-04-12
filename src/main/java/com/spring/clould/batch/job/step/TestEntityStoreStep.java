@@ -1,6 +1,7 @@
 package com.spring.clould.batch.job.step;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -13,8 +14,8 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.jms.dsl.Jms;
 
 import com.spring.clould.batch.entity.Cat;
-import com.spring.clould.batch.job.partitioner.KeyStorePartitioner;
-import com.spring.clould.batch.job.step.base.BaseRemoteStep;
+import com.spring.clould.batch.job.common.partitioner.KeyStorePartitioner;
+import com.spring.clould.batch.job.common.step.BaseRemoteStep;
 import com.spring.clould.batch.job.tasklet.TestEntityStoreTasklet;
 
 /**
@@ -87,5 +88,13 @@ public class TestEntityStoreStep extends BaseRemoteStep{
 	@StepScope
 	public Tasklet testEntityStoreTasklet(@Value("#{stepExecutionContext[keyList]}") final String keyList) {
 		return new TestEntityStoreTasklet(keyList);
+	}
+	
+	@Bean
+    public Job testEntityStoreJob() {
+         return jobBuilderFactory.get("testEntityStoreJob")
+                 .start(testEntityStoreMasterStep())
+                 .listener(jobListener)
+                 .build();
 	}
 }
